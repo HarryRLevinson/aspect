@@ -40,27 +40,21 @@ namespace aspect
       {
         public:
           /**
-           * Perform an interpolation of the properties of the particles in
-           * this cell onto a vector of positions in this cell.
-           * Implementations of this function must return a vector of a vector
-           * of doubles which contains a somehow computed
-           * value of all particle properties at all given positions.
-           *
-           * @param [in] particles Reference to the particle map.
-           * @param [in] positions The vector of positions where the properties
-           * should be evaluated.
-           * @param [in] cell An optional iterator to the cell containing the
-           * particles. Not all callers will know the cell of the particles,
-           * but providing the cell when known speeds up the interpolation
-           * significantly.
-           * @return A vector with as many entries as @p positions. Every entry
-           * is a vector of interpolated tracer properties at this position.
+           * @copydoc aspect::Particle::Interpolator::Interface::properties_at_points()
            */
           virtual
           std::vector<std::vector<double> >
           properties_at_points(const std::multimap<types::LevelInd, Particle<dim> > &particles,
                                const std::vector<Point<dim> > &positions,
-                               const typename parallel::distributed::Triangulation<dim>::cell_iterator &cell = typename parallel::distributed::Triangulation<dim>::cell_iterator()) const;
+                               const typename parallel::distributed::Triangulation<dim>::active_cell_iterator &cell) const;
+
+          /**
+           * @copydoc aspect::Particle::Interpolator::Interface::properties_at_points()
+           */
+          virtual
+          std::vector<std::vector<double> >
+          properties_at_points(const std::multimap<types::LevelInd, Particle<dim> > &particles,
+                               const std::vector<Point<dim> > &positions) const;
       };
 
     }
