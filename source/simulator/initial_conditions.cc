@@ -199,7 +199,7 @@ namespace aspect
     const Postprocess::Tracers<dim> *tracer_postprocessor = postprocess_manager.template find_postprocessor<Postprocess::Tracers<dim> >();
 
     const std::multimap<aspect::Particle::types::LevelInd, Particle::Particle<dim> > *particles = &tracer_postprocessor->get_particle_world().get_particles();
-    //const Particle::Interpolator::Interface<dim> *particle_interpolator = &tracer_postprocessor->get_particle_world().get_interpolator();
+    const Particle::Interpolator::Interface<dim> *particle_interpolator = &tracer_postprocessor->get_particle_world().get_interpolator();
 
     LinearAlgebra::BlockVector tracer_solution;
 
@@ -227,8 +227,8 @@ namespace aspect
           fe_values.reinit (cell);
           const std::vector<Point<dim> > quadrature_points = fe_values.get_quadrature_points();
 
-          //const std::vector<std::vector<double> > tracer_properties =
-          //    particle_interpolator->properties_at_points(*particles,quadrature_points,cell);
+          const std::vector<std::vector<double> > tracer_properties =
+              particle_interpolator->properties_at_points(*particles,quadrature_points,cell);
 
           // go through the temperature/composition dofs and set their global values
           // to the particle field interpolated at these points
@@ -239,7 +239,7 @@ namespace aspect
                 = finite_element.component_to_system_index(advection_field.component_index(introspection),
                                                            /*dof index within component=*/i);
 
-              const double value = 2.0; //tracer_properties[i][0];
+              const double value = tracer_properties[i][0];
               tracer_solution(local_dof_indices[system_local_dof]) = value;
             }
         }
