@@ -293,6 +293,7 @@ namespace aspect
      */
     unsigned int                   n_compositional_fields;
     std::vector<std::string>       names_of_compositional_fields;
+    std::vector<std::string>       advection_methods_of_compositional_fields;
     std::vector<unsigned int>      normalized_fields;
     /**
      * @}

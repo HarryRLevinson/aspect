@@ -293,6 +293,13 @@ namespace aspect
        */
       IndexSets index_sets;
 
+      enum AdvectionMethod
+      {
+        field = 0,
+        particles = 1
+      };
+      std::vector<AdvectionMethod> advection_methods;
+
       /**
        * @}
        */

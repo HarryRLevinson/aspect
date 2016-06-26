@@ -1844,8 +1844,21 @@ namespace aspect
 
           for (unsigned int c=0; c < parameters.n_compositional_fields; ++c)
             {
-              assemble_advection_system (AdvectionField::composition(c));
-              solve_advection(AdvectionField::composition(c));
+              const AdvectionField adv_field (AdvectionField::composition(c));
+              switch (adv_field.advection_method(introspection))
+                {
+                  case Introspection<dim>::AdvectionMethod::field:
+                    assemble_advection_system (adv_field);
+                    solve_advection(adv_field);
+                    break;
+
+                  case Introspection<dim>::AdvectionMethod::particles:
+                    interpolate_particle_properties(adv_field);
+                    break;
+
+                  default:
+                    AssertThrow(false,ExcNotImplemented());
+                }
             }
 
           for (unsigned int c=0; c<parameters.n_compositional_fields; ++c)

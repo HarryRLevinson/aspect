@@ -246,6 +246,13 @@ namespace aspect
         is_discontinuous (const Introspection<dim> &introspection) const;
 
         /**
+         * Return whether this object refers to a field discretized by
+         * discontinuous finite elements.
+         */
+        typename Introspection<dim>::AdvectionMethod
+        advection_method (const Introspection<dim> &introspection) const;
+
+        /**
          * Look up the component index for this temperature or compositional
          * field. See Introspection::component_indices for more information.
          */
@@ -444,6 +451,11 @@ namespace aspect
        * <code>source/simulator/solver.cc</code>.
        */
       double solve_advection (const AdvectionField &advection_field);
+
+      /**
+       * Interpolate a particular particle property to the solution field.
+       */
+      void interpolate_particle_properties (const AdvectionField &advection_field);
 
       /**
        * Solve the Stokes linear system. Return the initial nonlinear

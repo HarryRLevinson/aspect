@@ -169,8 +169,19 @@ namespace aspect
     base_elements (internal::setup_base_elements<dim>(*this)),
     component_masks (*this),
     system_dofs_per_block (n_blocks),
+    advection_methods(parameters.n_compositional_fields),
     composition_names(parameters.names_of_compositional_fields)
-  {}
+  {
+    for (unsigned int i = 0; i < parameters.n_compositional_fields; ++i)
+      {
+        if (parameters.advection_methods_of_compositional_fields[i] == "field")
+          advection_methods[i] = field;
+        else if (parameters.advection_methods_of_compositional_fields[i] == "particles")
+          advection_methods[i] = particles;
+        else
+          AssertThrow(false,ExcNotImplemented());
+      }
+  }
 
 
   template <int dim>

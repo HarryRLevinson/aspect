@@ -111,6 +111,13 @@ namespace aspect
   }
 
   template <int dim>
+  typename Introspection<dim>::AdvectionMethod
+  Simulator<dim>::AdvectionField::advection_method(const Introspection<dim> &introspection) const
+  {
+    return introspection.advection_methods[compositional_variable];
+  }
+
+  template <int dim>
   unsigned int
   Simulator<dim>::AdvectionField::block_index(const Introspection<dim> &introspection) const
   {

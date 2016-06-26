@@ -739,6 +739,18 @@ namespace aspect
       prm.declare_entry ("Names of fields", "",
                          Patterns::List(Patterns::Anything()),
                          "A user-defined name for each of the compositional fields requested.");
+      prm.declare_entry ("Advection method of fields", "",
+                         Patterns::Map (Patterns::Anything(),
+                                        Patterns::Selection("field|particles")),
+                         "A comma separated list denoting the type of advection solver "
+                         "that is used for the compositional fields. "
+                         "\n\n"
+                         "The format of valid entries for this parameter is that of a map "
+                         "given as ``key1: value1, key2: value2, key3: value3, ...'' where "
+                         "each key must be a valid field name "
+                         "and each value must be one of the currently "
+                         "implemented advection solvers: ``field'' or "
+                         "``particles''. ");
       prm.declare_entry ("List of normalized fields", "",
                          Patterns::List (Patterns::Integer(0)),
                          "A list of integers smaller than or equal to the number of "
@@ -1103,6 +1115,70 @@ namespace aspect
                      ExcMessage ("The number of multiple 'Global composition maximum' values "
                                  "and the number of multiple 'Global composition minimum' values "
                                  "have to be the same as the total number of compositional fields"));
+
+      const std::vector<std::string> x_advection_method_of_fields
+        = Utilities::split_string_list
+          (prm.get ("Advection method of fields"));
+
+      AssertThrow ((x_advection_method_of_fields.size() == 0) ||
+                   (x_advection_method_of_fields.size() == n_compositional_fields),
+                   ExcMessage ("The length of the list of names for the advection type of "
+                               "fields needs to either be empty or have length equal to "
+                               "the number of compositional fields."));
+
+      for (std::vector<std::string>::const_iterator p = x_advection_method_of_fields.begin();
+           p != x_advection_method_of_fields.end(); ++p)
+        {
+          // each entry has the format (white space is optional):
+          // <name> : <value (might have spaces)>
+          //
+          // first tease apart the two halves
+          const std::vector<std::string> split_parts = Utilities::split_string_list (*p, ':');
+          AssertThrow (split_parts.size() == 2,
+                       ExcMessage ("The format for prescribed velocity boundary indicators "
+                                   "requires that each entry has the form `"
+                                   "<id> : <value>', but there does not "
+                                   "appear to be a colon in the entry <"
+                                   + *p
+                                   + ">."));
+
+          // the easy part: get the value and key of advection method
+          const std::string key = split_parts[0];
+          const std::string value = split_parts[1];
+
+          // check that the names used are actually names of fields
+          // and are unique in this list
+          bool found_field = false;
+          for (unsigned int i=0; i<n_compositional_fields; ++i)
+            {
+              if (key == names_of_compositional_fields[i])
+                found_field = true;
+            }
+          AssertThrow (found_field,
+                       ExcMessage ("Name of field <" + key +
+                                   "> appears in the list of advection methods, but"
+                                   "there is no field with this name."));
+
+          bool duplicated_field = false;
+          for (unsigned int i=0; i<advection_methods_of_compositional_fields.size(); ++i)
+            {
+              if (key == advection_methods_of_compositional_fields[i])
+                duplicated_field = true;
+            }
+          AssertThrow (!duplicated_field,
+                       ExcMessage ("Name of field <" + key +
+                                   "> appears more than once in the list of "
+                                   "advection methods."));
+
+          // finally, put it into the list
+          advection_methods_of_compositional_fields.push_back(value);
+        }
+
+      // If not type is specified set the default, which is solve every composition
+      // by a field method
+      if (advection_methods_of_compositional_fields.size() == 0)
+        advection_methods_of_compositional_fields = std::vector<std::string> (n_compositional_fields,
+                                                                              "field");
     }
     prm.leave_subsection ();
 
