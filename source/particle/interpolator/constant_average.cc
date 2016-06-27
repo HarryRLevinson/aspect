@@ -35,7 +35,7 @@ namespace aspect
       template <int dim>
       std::vector<std::vector<double> >
       CellAverage<dim>::properties_at_points(const std::multimap<types::LevelInd, Particle<dim> > &particles,
-                                                 const std::vector<Point<dim> > &positions) const
+                                             const std::vector<Point<dim> > &positions) const
       {
         // We can not simply use one of the points as input for find_active_cell_around_point
         // because for vertices of mesh cells we might end up getting ghost_cells as return value
@@ -88,8 +88,8 @@ namespace aspect
       template <int dim>
       std::vector<std::vector<double> >
       CellAverage<dim>::properties_at_points(const std::multimap<types::LevelInd, Particle<dim> > &particles,
-                                                 const std::vector<Point<dim> > &positions,
-                                                 const typename parallel::distributed::Triangulation<dim>::active_cell_iterator &cell) const
+                                             const std::vector<Point<dim> > &positions,
+                                             const typename parallel::distributed::Triangulation<dim>::active_cell_iterator &cell) const
       {
         const types::LevelInd cell_index = std::make_pair<unsigned int, unsigned int> (cell->level(),cell->index());
         const std::pair<typename std::multimap<types::LevelInd, Particle<dim> >::const_iterator,

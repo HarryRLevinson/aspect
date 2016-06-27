@@ -169,17 +169,20 @@ namespace aspect
     base_elements (internal::setup_base_elements<dim>(*this)),
     component_masks (*this),
     system_dofs_per_block (n_blocks),
-    advection_methods(parameters.n_compositional_fields),
     composition_names(parameters.names_of_compositional_fields)
   {
-    for (unsigned int i = 0; i < parameters.n_compositional_fields; ++i)
+    for (std::map<std::string,std::string>::const_iterator field_advection_method = parameters.advection_methods_of_compositional_fields.begin();
+        field_advection_method != parameters.advection_methods_of_compositional_fields.end(); ++field_advection_method)
       {
-        if (parameters.advection_methods_of_compositional_fields[i] == "field")
-          advection_methods[i] = field;
-        else if (parameters.advection_methods_of_compositional_fields[i] == "particles")
-          advection_methods[i] = particles;
+        AdvectionMethod method;
+        if (field_advection_method->second == "field")
+         method = field;
+        else if (field_advection_method->second == "particles")
+          method = particles;
         else
           AssertThrow(false,ExcNotImplemented());
+
+        advection_methods.insert(std::make_pair(field_advection_method->first,method));
       }
   }
 

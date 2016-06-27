@@ -198,8 +198,19 @@ namespace aspect
 
     const Postprocess::Tracers<dim> *tracer_postprocessor = postprocess_manager.template find_postprocessor<Postprocess::Tracers<dim> >();
 
+    AssertThrow(tracer_postprocessor != 0,
+                ExcMessage("Did not find the <tracers> postprocessor when trying to interpolate particle properties."));
+
     const std::multimap<aspect::Particle::types::LevelInd, Particle::Particle<dim> > *particles = &tracer_postprocessor->get_particle_world().get_particles();
     const Particle::Interpolator::Interface<dim> *particle_interpolator = &tracer_postprocessor->get_particle_world().get_interpolator();
+    const Particle::Property::Manager<dim> *particle_property_manager = &tracer_postprocessor->get_particle_world().get_property_manager();
+
+    const std::string composition_name = introspection.name_for_compositional_index(advection_field.compositional_variable);
+    const std::pair<std::string,unsigned int> particle_property_and_component = parameters.mapped_particle_properties.find(composition_name)->second;
+    const unsigned int particle_property = particle_property_and_component.second +
+        particle_property_manager->get_property_component_by_name(particle_property_and_component.first);
+
+    std::cout << "Field: " << composition_name << ". Particle component: " << particle_property << std::endl;
 
     LinearAlgebra::BlockVector tracer_solution;
 
@@ -228,7 +239,7 @@ namespace aspect
           const std::vector<Point<dim> > quadrature_points = fe_values.get_quadrature_points();
 
           const std::vector<std::vector<double> > tracer_properties =
-              particle_interpolator->properties_at_points(*particles,quadrature_points,cell);
+            particle_interpolator->properties_at_points(*particles,quadrature_points,cell);
 
           // go through the temperature/composition dofs and set their global values
           // to the particle field interpolated at these points
@@ -239,7 +250,8 @@ namespace aspect
                 = finite_element.component_to_system_index(advection_field.component_index(introspection),
                                                            /*dof index within component=*/i);
 
-              const double value = tracer_properties[i][0];
+
+              const double value = tracer_properties[i][particle_property];
               tracer_solution(local_dof_indices[system_local_dof]) = value;
             }
         }

@@ -298,7 +298,7 @@ namespace aspect
         field = 0,
         particles = 1
       };
-      std::vector<AdvectionMethod> advection_methods;
+      std::map<std::string,AdvectionMethod> advection_methods;
 
       /**
        * @}

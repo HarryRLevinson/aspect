@@ -751,6 +751,21 @@ namespace aspect
                          "and each value must be one of the currently "
                          "implemented advection solvers: ``field'' or "
                          "``particles''. ");
+      prm.declare_entry ("Mapped particle properties", "",
+                         Patterns::Map (Patterns::Anything(),
+                                        Patterns::Anything()),
+                         "A comma separated list denoting the particle properties "
+                         "that will be projected to those compositional fields that "
+                         "use the 'particle' advection method."
+                         "\n\n"
+                         "The format of valid entries for this parameter is that of a map "
+                         "given as ``key1: value1, key2: value2 [component2], key3: value3 [component4], "
+                         "...'' where each key must be a valid field name "
+                         "and each value must be one of the currently "
+                         "selected particle properties. Component is a component index of "
+                         "the particle property that is 1 by default, and only needs to be "
+                         "set if a different component of the particle property should be "
+                         "mapped (e.g. the y-component of the velocity at the particle positions).");
       prm.declare_entry ("List of normalized fields", "",
                          Patterns::List (Patterns::Integer(0)),
                          "A list of integers smaller than or equal to the number of "
@@ -1126,6 +1141,7 @@ namespace aspect
                                "fields needs to either be empty or have length equal to "
                                "the number of compositional fields."));
 
+      unsigned int number_of_particle_fields = 0;
       for (std::vector<std::string>::const_iterator p = x_advection_method_of_fields.begin();
            p != x_advection_method_of_fields.end(); ++p)
         {
@@ -1148,37 +1164,120 @@ namespace aspect
 
           // check that the names used are actually names of fields
           // and are unique in this list
-          bool found_field = false;
-          for (unsigned int i=0; i<n_compositional_fields; ++i)
-            {
-              if (key == names_of_compositional_fields[i])
-                found_field = true;
-            }
-          AssertThrow (found_field,
+          AssertThrow (std::find(names_of_compositional_fields.begin(),
+                                 names_of_compositional_fields.end(), key)
+                       != names_of_compositional_fields.end(),
                        ExcMessage ("Name of field <" + key +
                                    "> appears in the list of advection methods, but"
                                    "there is no field with this name."));
 
-          bool duplicated_field = false;
-          for (unsigned int i=0; i<advection_methods_of_compositional_fields.size(); ++i)
-            {
-              if (key == advection_methods_of_compositional_fields[i])
-                duplicated_field = true;
-            }
-          AssertThrow (!duplicated_field,
+          AssertThrow (std::count(names_of_compositional_fields.begin(),
+                                  names_of_compositional_fields.end(), key) == 1,
                        ExcMessage ("Name of field <" + key +
                                    "> appears more than once in the list of "
                                    "advection methods."));
 
           // finally, put it into the list
-          advection_methods_of_compositional_fields.push_back(value);
+          advection_methods_of_compositional_fields.insert(std::make_pair(key,value));
+
+          if (value == "particles")
+            number_of_particle_fields++;
         }
 
       // If not type is specified set the default, which is solve every composition
       // by a field method
       if (advection_methods_of_compositional_fields.size() == 0)
-        advection_methods_of_compositional_fields = std::vector<std::string> (n_compositional_fields,
-                                                                              "field");
+        for (unsigned int i = 0; i < n_compositional_fields; ++i)
+        advection_methods_of_compositional_fields.insert (std::make_pair(names_of_compositional_fields[i],
+                                                                              "field"));
+
+
+      const std::vector<std::string> x_mapped_particle_properties
+        = Utilities::split_string_list
+          (prm.get ("Mapped particle properties"));
+
+      AssertThrow ((x_mapped_particle_properties.size() == number_of_particle_fields),
+                   ExcMessage ("The list of names for the mapped particle "
+                               "property fields needs to have a length equal to "
+                               "the number of compositional fields that are advected on particles."));
+
+      for (std::vector<std::string>::const_iterator p = x_mapped_particle_properties.begin();
+           p != x_mapped_particle_properties.end(); ++p)
+        {
+          // each entry has the format (white space is optional):
+          // <name> : <value (might have spaces)> [component]
+          //
+          // first tease apart the two halves
+          const std::vector<std::string> split_parts = Utilities::split_string_list (*p, ':');
+          AssertThrow (split_parts.size() == 2,
+                       ExcMessage ("The format for mapped particle properties  "
+                                   "requires that each entry has the form `"
+                                   "<name of field> : <particle property> [component]', "
+                                   "but there does not appear to be a colon in the entry <"
+                                   + *p
+                                   + ">."));
+
+          // the easy part: get the name of the compositional field
+          const std::string key = split_parts[0];
+
+          // check that the names used are actually names of fields
+          // and are unique in this list
+          AssertThrow (std::find(names_of_compositional_fields.begin(),
+                                 names_of_compositional_fields.end(), key)
+                       != names_of_compositional_fields.end(),
+                       ExcMessage ("Name of field <" + key +
+                                   "> appears in the list of mapped particle properties, but"
+                                   "there is no field with this name."));
+
+          AssertThrow (std::count(names_of_compositional_fields.begin(),
+                                  names_of_compositional_fields.end(), key) == 1,
+                       ExcMessage ("Name of field <" + key +
+                                   "> appears more than once in the list of "
+                                   "mapped particle properties."));
+
+          // now for the rest. since we don't know whether there is a
+          // component selector, start reading at the end and subtract
+          // a number that might be a component selector
+          std::string value_and_comp = split_parts[1];
+          std::string comp;
+          if ((value_and_comp.size()>0) &&
+              ((value_and_comp[value_and_comp.size()-1] >= '0')
+               &&
+               (value_and_comp[value_and_comp.size()-1] <= '9')))
+            {
+              comp = value_and_comp[value_and_comp.size()-1];
+              value_and_comp.erase (--value_and_comp.end());
+            }
+
+          // we've stopped reading component selectors now. there are three
+          // possibilities:
+          // - no characters are left. this means that value_and_comp only
+          //   consisted of a single word that only consisted of 'x', 'y'
+          //   and 'z's. then this would have been a mistake to classify
+          //   as a component selector, and we better undo it
+          // - the last character of value_and_comp is not a whitespace. this
+          //   means that the last word in value_and_comp ended in an 'x', 'y'
+          //   or 'z', but this was not meant to be a component selector.
+          //   in that case, put these characters back.
+          // - otherwise, we split successfully. eat spaces that may be at
+          //   the end of value_and_comp to get key
+          if (value_and_comp.size() == 0)
+            value_and_comp.swap (comp);
+          else if (value_and_comp[value_and_comp.size()-1] != ' ')
+            {
+              value_and_comp += comp;
+              comp = "";
+            }
+          else
+            {
+              while ((value_and_comp.size()>0) && (value_and_comp[value_and_comp.size()-1] == ' '))
+                value_and_comp.erase (--value_and_comp.end());
+            }
+
+          // finally, put it into the list
+          std::cout << "Key: " << key << " Value: " << value_and_comp << " Comp: " << comp << std::endl;
+          mapped_particle_properties.insert(std::make_pair(key,std::make_pair(value_and_comp,atoi(comp.c_str()))));
+        }
     }
     prm.leave_subsection ();
 
