@@ -63,7 +63,7 @@ end
 subsection Compositional fields
   set Number of fields = 3
   set Names of fields = advection_field, advection_particle, advection_particle2
-  set Advection method of fields = advection_field:field, advection_particle:particles, advection_particle2: particles
+  set Compositional field methods = continuous field, particles, particles
   set Mapped particle properties = advection_particle2:velocity 1, advection_particle:function
 end
 

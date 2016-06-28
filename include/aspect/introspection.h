@@ -293,12 +293,27 @@ namespace aspect
        */
       IndexSets index_sets;
 
-      enum AdvectionMethod
+      /**
+       * A struct that describes the available methods for
+       * compositional fields. This type is used to determine how
+       * to advect a compositional field.
+       */
+      struct FieldMethod
       {
-        field = 0,
-        particles = 1
+          enum kind
+          {
+            continuous_fem_field = 0,
+            discontinuous_fem_field = 1,
+            particles = 2
+          };
       };
-      std::map<std::string,AdvectionMethod> advection_methods;
+
+      /**
+       * A vector that contains a field method for every compositional
+       * field and is used to determine how to solve a particular field when
+       * solving a timestep.
+       */
+      std::vector<typename FieldMethod::kind> field_methods;
 
       /**
        * @}

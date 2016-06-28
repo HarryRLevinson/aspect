@@ -45,14 +45,6 @@ namespace aspect
           virtual
           std::vector<std::vector<double> >
           properties_at_points(const std::multimap<types::LevelInd, Particle<dim> > &particles,
-                               const std::vector<Point<dim> > &positions) const;
-
-          /**
-           * @copydoc aspect::Particle::Interpolator::Interface::properties_at_points()
-           */
-          virtual
-          std::vector<std::vector<double> >
-          properties_at_points(const std::multimap<types::LevelInd, Particle<dim> > &particles,
                                const std::vector<Point<dim> > &positions,
                                const typename parallel::distributed::Triangulation<dim>::active_cell_iterator &cell) const;
       };

@@ -171,18 +171,19 @@ namespace aspect
     system_dofs_per_block (n_blocks),
     composition_names(parameters.names_of_compositional_fields)
   {
-    for (std::map<std::string,std::string>::const_iterator field_advection_method = parameters.advection_methods_of_compositional_fields.begin();
-         field_advection_method != parameters.advection_methods_of_compositional_fields.end(); ++field_advection_method)
+    for (unsigned int i = 0; i < parameters.n_compositional_fields; ++i)
       {
-        AdvectionMethod method;
-        if (field_advection_method->second == "field")
-          method = field;
-        else if (field_advection_method->second == "particles")
-          method = particles;
+        typename FieldMethod::kind method;
+        if (parameters.compositional_field_methods[i] == "continuous field")
+          method = FieldMethod::continuous_fem_field;
+        else if (parameters.compositional_field_methods[i] == "discontinuous field")
+          method = FieldMethod::discontinuous_fem_field;
+        else if (parameters.compositional_field_methods[i] == "particles")
+          method = FieldMethod::particles;
         else
           AssertThrow(false,ExcNotImplemented());
 
-        advection_methods.insert(std::make_pair(field_advection_method->first,method));
+        field_methods.push_back(method);
       }
   }
 

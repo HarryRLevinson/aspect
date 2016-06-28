@@ -293,12 +293,21 @@ namespace aspect
      */
     unsigned int                   n_compositional_fields;
     std::vector<std::string>       names_of_compositional_fields;
-    std::map<std::string,std::string> advection_methods_of_compositional_fields;
+
+    /**
+     * A vector that contains the field method for every compositional
+     * field. Consequently the vector has n_compositional_fields entries.
+     */
+    std::vector<std::string> compositional_field_methods;
 
     /**
      * Map from compositional field name to a pair "particle property", "component",
-     * where component is of the format "[1][2][3]" and the particle property is
-     * mapped to one of the particle property plugins.
+     * where particle property is a string that can be mapped to one of the
+     * particle property plugins.
+     * Component denotes which component of the particle property is to be
+     * mapped in case there are several. Therefore, it is optional to specify
+     * the component and it is of the format "[0][1][2]". In case no component
+     * is specified it defaults to 0.
      */
     std::map<std::string, std::pair<std::string,unsigned int> > mapped_particle_properties;
 

@@ -246,11 +246,11 @@ namespace aspect
         is_discontinuous (const Introspection<dim> &introspection) const;
 
         /**
-         * Return whether this object refers to a field discretized by
-         * discontinuous finite elements.
+         * Return the method that is used to solve the advection of this field
+         * (i.e. 'field', 'particles').
          */
-        typename Introspection<dim>::AdvectionMethod
-        advection_method (const Introspection<dim> &introspection) const;
+        typename Introspection<dim>::FieldMethod::kind
+        method (const Introspection<dim> &introspection) const;
 
         /**
          * Look up the component index for this temperature or compositional
