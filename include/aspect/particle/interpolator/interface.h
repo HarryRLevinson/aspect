@@ -63,27 +63,10 @@ namespace aspect
            * @param [in] particles Reference to the particle map.
            * @param [in] positions The vector of positions where the properties
            * should be evaluated.
-           * @return A vector with as many entries as @p positions. Every entry
-           * is a vector of interpolated tracer properties at this position.
-           */
-          virtual
-          std::vector<std::vector<double> >
-          properties_at_points(const std::multimap<types::LevelInd, Particle<dim> > &particles,
-                               const std::vector<Point<dim> > &positions) const = 0;
-
-          /**
-           * The purpose of this function is identical to the properties_at_points()
-           * with two arguments, but it gets an additional argument @p cell, which is
-           * a cell iterator to the cell that contains the @p positions. Often the
-           * cell containing the positions is known and this function can be implemented
-           * more efficiently than the general one above. It has a default implementation
-           * that simply calls the function with two arguments.
-           *
-           * @param [in] particles Reference to the particle map.
-           * @param [in] positions The vector of positions where the properties
-           * should be evaluated.
-           * @param [in] cell An iterator to the cell containing the
-           * particles.
+           * @param [in] cell An optional iterator to the cell containing the
+           * particles. Not all callers will know the cell of the particles,
+           * but providing the cell when known speeds up the interpolation
+           * significantly.
            * @return A vector with as many entries as @p positions. Every entry
            * is a vector of interpolated tracer properties at this position.
            */
@@ -91,7 +74,7 @@ namespace aspect
           std::vector<std::vector<double> >
           properties_at_points(const std::multimap<types::LevelInd, Particle<dim> > &particles,
                                const std::vector<Point<dim> > &positions,
-                               const typename parallel::distributed::Triangulation<dim>::active_cell_iterator &cell) const;
+                               const typename parallel::distributed::Triangulation<dim>::cell_iterator &cell = typename parallel::distributed::Triangulation<dim>::cell_iterator()) const = 0;
 
           /**
            * Declare the parameters this class takes through input files. The

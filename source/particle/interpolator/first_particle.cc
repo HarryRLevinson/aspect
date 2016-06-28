@@ -35,44 +35,22 @@ namespace aspect
       template <int dim>
       std::vector<std::vector<double> >
       FirstParticle<dim>::properties_at_points(const std::multimap<types::LevelInd, Particle<dim> > &particles,
-                                               const std::vector<Point<dim> > &positions) const
-      {
-        std::vector<std::vector<double> > properties(positions.size());
-
-        for (unsigned int point = 0; point < positions.size(); ++point)
-          {
-            const typename parallel::distributed::Triangulation<dim>::active_cell_iterator cell = (GridTools::find_active_cell_around_point<> (this->get_mapping(), this->get_triangulation(), positions[point])).first;
-
-            const types::LevelInd cell_index = std::make_pair<unsigned int, unsigned int> (cell->level(),cell->index());
-
-            AssertThrow(particles.find(cell_index) != particles.end(),
-                        ExcMessage("At least one cell contained no particles. The 'First "
-                                   "particle' interpolation scheme does not support this case. "));
-
-            // Find will only return the first particle it finds in that particular cell,
-            // it is *not* the closest particle to the given position.
-            const Particle<dim> particle = particles.find(cell_index)->second;
-
-            properties[point] = particle.get_properties();
-          }
-
-        return properties;
-      }
-
-      /**
-       * Return the properties of the first tracer of the cell containing the
-       * given positions.
-       */
-      template <int dim>
-      std::vector<std::vector<double> >
-      FirstParticle<dim>::properties_at_points(const std::multimap<types::LevelInd, Particle<dim> > &particles,
                                                const std::vector<Point<dim> > &positions,
-                                               const typename parallel::distributed::Triangulation<dim>::active_cell_iterator &cell) const
+                                               const typename parallel::distributed::Triangulation<dim>::cell_iterator &cell) const
       {
         std::vector<std::vector<double> > properties(positions.size());
 
+        // If the caller has provided a cell, we assume all positions are in that cell
+        typename parallel::distributed::Triangulation<dim>::cell_iterator found_cell = cell;
+
         for (unsigned int point = 0; point < positions.size(); ++point)
           {
+            // If the caller has not provided a cell, find the cell for every position
+            if (found_cell == typename parallel::distributed::Triangulation<dim>::cell_iterator())
+              {
+                found_cell = (GridTools::find_active_cell_around_point<> (this->get_mapping(), this->get_triangulation(), positions[point])).first;
+              }
+
             const types::LevelInd cell_index = std::make_pair<unsigned int, unsigned int> (cell->level(),cell->index());
 
             AssertThrow(particles.find(cell_index) != particles.end(),
