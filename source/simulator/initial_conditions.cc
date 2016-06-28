@@ -208,9 +208,7 @@ namespace aspect
     const std::string composition_name = introspection.name_for_compositional_index(advection_field.compositional_variable);
     const std::pair<std::string,unsigned int> particle_property_and_component = parameters.mapped_particle_properties.find(composition_name)->second;
     const unsigned int particle_property = particle_property_and_component.second +
-        particle_property_manager->get_property_component_by_name(particle_property_and_component.first);
-
-    std::cout << "Field: " << composition_name << ". Particle component: " << particle_property << std::endl;
+                                           particle_property_manager->get_property_component_by_name(particle_property_and_component.first);
 
     LinearAlgebra::BlockVector tracer_solution;
 

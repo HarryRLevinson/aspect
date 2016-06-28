@@ -1188,8 +1188,8 @@ namespace aspect
       // by a field method
       if (advection_methods_of_compositional_fields.size() == 0)
         for (unsigned int i = 0; i < n_compositional_fields; ++i)
-        advection_methods_of_compositional_fields.insert (std::make_pair(names_of_compositional_fields[i],
-                                                                              "field"));
+          advection_methods_of_compositional_fields.insert (std::make_pair(names_of_compositional_fields[i],
+                                                                           "field"));
 
 
       const std::vector<std::string> x_mapped_particle_properties
@@ -1275,7 +1275,6 @@ namespace aspect
             }
 
           // finally, put it into the list
-          std::cout << "Key: " << key << " Value: " << value_and_comp << " Comp: " << comp << std::endl;
           mapped_particle_properties.insert(std::make_pair(key,std::make_pair(value_and_comp,atoi(comp.c_str()))));
         }
     }

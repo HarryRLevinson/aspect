@@ -172,11 +172,11 @@ namespace aspect
     composition_names(parameters.names_of_compositional_fields)
   {
     for (std::map<std::string,std::string>::const_iterator field_advection_method = parameters.advection_methods_of_compositional_fields.begin();
-        field_advection_method != parameters.advection_methods_of_compositional_fields.end(); ++field_advection_method)
+         field_advection_method != parameters.advection_methods_of_compositional_fields.end(); ++field_advection_method)
       {
         AdvectionMethod method;
         if (field_advection_method->second == "field")
-         method = field;
+          method = field;
         else if (field_advection_method->second == "particles")
           method = particles;
         else
