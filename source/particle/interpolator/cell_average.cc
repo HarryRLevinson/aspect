@@ -18,7 +18,7 @@
  <http://www.gnu.org/licenses/>.
  */
 
-#include <aspect/particle/interpolator/constant_average.h>
+#include <aspect/particle/interpolator/cell_average.h>
 
 #include <deal.II/grid/grid_tools.h>
 
@@ -101,7 +101,7 @@ namespace aspect
     namespace Interpolator
     {
       ASPECT_REGISTER_PARTICLE_INTERPOLATOR(CellAverage,
-                                            "constant average",
+                                            "cell average",
                                             "Return the average of all tracer properties in the given cell.")
     }
   }

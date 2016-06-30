@@ -1131,26 +1131,32 @@ namespace aspect
           (prm.get ("Compositional field methods"));
 
       AssertThrow ((compositional_field_methods.size() == 0) ||
+                   (compositional_field_methods.size() == 1) ||
                    (compositional_field_methods.size() == n_compositional_fields),
                    ExcMessage ("The length of the list of names for the field method of compositional "
-                               "fields needs to either be empty or have length equal to "
+                               "fields needs to be empty, or have one entry, or have a length equal to "
                                "the number of compositional fields."));
-
-      const unsigned int number_of_particle_fields =
-        std::count(compositional_field_methods.begin(),compositional_field_methods.end(),"particles");
 
       // If no method is specified set the default, which is solve every composition
       // by a continuous field method
       if (compositional_field_methods.size() == 0)
         compositional_field_methods = std::vector<std::string> (n_compositional_fields,"continuous field");
+      // If only one method is specified assume all fields are solved by this method
+      else if (compositional_field_methods.size() == 1)
+        compositional_field_methods = std::vector<std::string> (n_compositional_fields,compositional_field_methods[0]);
+
 
       const std::vector<std::string> x_mapped_particle_properties
         = Utilities::split_string_list
           (prm.get ("Mapped particle properties"));
 
-      AssertThrow ((x_mapped_particle_properties.size() == number_of_particle_fields),
+      const unsigned int number_of_particle_fields =
+        std::count(compositional_field_methods.begin(),compositional_field_methods.end(),"particles");
+
+      AssertThrow ((x_mapped_particle_properties.size() == number_of_particle_fields)
+                   || (x_mapped_particle_properties.size() == 0),
                    ExcMessage ("The list of names for the mapped particle "
-                               "property fields needs to have a length equal to "
+                               "property fields needs to either be empty or have a length equal to "
                                "the number of compositional fields that are advected on particles."));
 
       for (std::vector<std::string>::const_iterator p = x_mapped_particle_properties.begin();

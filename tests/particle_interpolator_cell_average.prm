@@ -114,7 +114,7 @@ subsection Postprocess
     set Time between data output = 70
     set Data output format = none
     set List of tracer properties = velocity, function, initial composition
-    set Interpolation scheme = constant average
+    set Interpolation scheme = cell average
 
     subsection Function
       set Variable names      = x,z
