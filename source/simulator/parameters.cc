@@ -1142,7 +1142,7 @@ namespace aspect
       // If no method is specified set the default, which is solve every composition
       // by a continuous field method
       if (compositional_field_methods.size() == 0)
-        compositional_field_methods = std::vector<std::string> (n_compositional_fields,"continuous_fem_field");
+        compositional_field_methods = std::vector<std::string> (n_compositional_fields,"continuous field");
 
       const std::vector<std::string> x_mapped_particle_properties
         = Utilities::split_string_list
