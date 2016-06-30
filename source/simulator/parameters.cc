@@ -1137,7 +1137,7 @@ namespace aspect
                                "the number of compositional fields."));
 
       const unsigned int number_of_particle_fields =
-          std::count(compositional_field_methods.begin(),compositional_field_methods.end(),"particles");
+        std::count(compositional_field_methods.begin(),compositional_field_methods.end(),"particles");
 
       // If no method is specified set the default, which is solve every composition
       // by a continuous field method
@@ -1175,7 +1175,7 @@ namespace aspect
           // check that the names used are actually names of fields,
           // are solved by particles, and are unique in this list
           std::vector<std::string>::iterator field_name_iterator = std::find(names_of_compositional_fields.begin(),
-                                                                                   names_of_compositional_fields.end(), key);
+                                                                             names_of_compositional_fields.end(), key);
           AssertThrow (field_name_iterator
                        != names_of_compositional_fields.end(),
                        ExcMessage ("Name of field <" + key +
@@ -1184,7 +1184,7 @@ namespace aspect
 
           const unsigned int compositional_field_index = std::distance(names_of_compositional_fields.begin(),field_name_iterator);
           AssertThrow (compositional_field_methods[compositional_field_index]
-                      == "particles",
+                       == "particles",
                        ExcMessage ("The field <" + key +
                                    "> appears in the list of mapped particle properties, but"
                                    "is not advected by a particle method."));

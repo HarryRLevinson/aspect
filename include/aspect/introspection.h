@@ -300,12 +300,12 @@ namespace aspect
        */
       struct FieldMethod
       {
-          enum kind
-          {
-            continuous_fem_field = 0,
-            discontinuous_fem_field = 1,
-            particles = 2
-          };
+        enum kind
+        {
+          continuous_fem_field = 0,
+          discontinuous_fem_field = 1,
+          particles = 2
+        };
       };
 
       /**
