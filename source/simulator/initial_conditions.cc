@@ -239,7 +239,7 @@ namespace aspect
             ExcInternalError());
 
     // create an FEValues object with just the temperature/composition element
-    FEValues<dim> fe_values (mapping, finite_element,
+    FEValues<dim> fe_values (*mapping, finite_element,
                              support_points,
                              update_quadrature_points);
 
