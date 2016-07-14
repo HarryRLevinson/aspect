@@ -31,7 +31,7 @@ namespace aspect
     namespace Interpolator
     {
       /**
-       * Return the averaged properties of all tracers of the given cell.
+       * Return the averaged properties of all tracers on the given cell.
        *
        * @ingroup ParticleInterpolators
        */
@@ -39,9 +39,6 @@ namespace aspect
       class CellAverage : public Interface<dim>, public aspect::SimulatorAccess<dim>
       {
         public:
-          /**
-           * @copydoc aspect::Particle::Interpolator::Interface::properties_at_points()
-           */
           virtual
           std::vector<std::vector<double> >
           properties_at_points(const std::multimap<types::LevelInd, Particle<dim> > &particles,

@@ -740,12 +740,11 @@ namespace aspect
                          Patterns::List(Patterns::Anything()),
                          "A user-defined name for each of the compositional fields requested.");
       prm.declare_entry ("Compositional field methods", "",
-                         Patterns::List (Patterns::Selection("continuous field|particles")),
+                         Patterns::List (Patterns::Selection("field|particles")),
                          "A comma separated list denoting the solution method of each "
                          "compositional field. Each entry of the list must be "
                          "one of the currently implemented field types: "
-                         "``continuous_fem_field'', ``discontinuous_fem_field'', "
-                         "or ``particles''.");
+                         "``field'', or ``particles''.");
       prm.declare_entry ("Mapped particle properties", "",
                          Patterns::Map (Patterns::Anything(),
                                         Patterns::Anything()),
@@ -1126,24 +1125,40 @@ namespace aspect
                                  "and the number of multiple 'Global composition minimum' values "
                                  "have to be the same as the total number of compositional fields"));
 
-      compositional_field_methods
+      std::vector<std::string> x_compositional_field_methods
         = Utilities::split_string_list
           (prm.get ("Compositional field methods"));
 
-      AssertThrow ((compositional_field_methods.size() == 0) ||
-                   (compositional_field_methods.size() == 1) ||
-                   (compositional_field_methods.size() == n_compositional_fields),
+      AssertThrow ((x_compositional_field_methods.size() == 0) ||
+                   (x_compositional_field_methods.size() == 1) ||
+                   (x_compositional_field_methods.size() == n_compositional_fields),
                    ExcMessage ("The length of the list of names for the field method of compositional "
                                "fields needs to be empty, or have one entry, or have a length equal to "
                                "the number of compositional fields."));
 
       // If no method is specified set the default, which is solve every composition
       // by a continuous field method
-      if (compositional_field_methods.size() == 0)
-        compositional_field_methods = std::vector<std::string> (n_compositional_fields,"continuous field");
+      if (x_compositional_field_methods.size() == 0)
+        x_compositional_field_methods = std::vector<std::string> (n_compositional_fields,"field");
       // If only one method is specified assume all fields are solved by this method
-      else if (compositional_field_methods.size() == 1)
-        compositional_field_methods = std::vector<std::string> (n_compositional_fields,compositional_field_methods[0]);
+      else if (x_compositional_field_methods.size() == 1)
+        x_compositional_field_methods = std::vector<std::string> (n_compositional_fields,x_compositional_field_methods[0]);
+
+
+      // Parse all field methods and store them, the vector should be empty
+      // since nobody should have written into it yet.
+      Assert(compositional_field_methods.size() == 0,
+             ExcInternalError());
+      compositional_field_methods.resize(n_compositional_fields);
+      for (unsigned int i = 0; i < n_compositional_fields; ++i)
+        {
+          if (x_compositional_field_methods[i] == "field")
+            compositional_field_methods[i] = AdvectionFieldMethod::fem_field;
+          else if (x_compositional_field_methods[i] == "particles")
+            compositional_field_methods[i] = AdvectionFieldMethod::particles;
+          else
+            AssertThrow(false,ExcNotImplemented());
+        }
 
 
       const std::vector<std::string> x_mapped_particle_properties
@@ -1151,7 +1166,7 @@ namespace aspect
           (prm.get ("Mapped particle properties"));
 
       const unsigned int number_of_particle_fields =
-        std::count(compositional_field_methods.begin(),compositional_field_methods.end(),"particles");
+        std::count(compositional_field_methods.begin(),compositional_field_methods.end(),AdvectionFieldMethod::particles);
 
       AssertThrow ((x_mapped_particle_properties.size() == number_of_particle_fields)
                    || (x_mapped_particle_properties.size() == 0),
@@ -1190,7 +1205,7 @@ namespace aspect
 
           const unsigned int compositional_field_index = std::distance(names_of_compositional_fields.begin(),field_name_iterator);
           AssertThrow (compositional_field_methods[compositional_field_index]
-                       == "particles",
+                       == AdvectionFieldMethod::particles,
                        ExcMessage ("The field <" + key +
                                    "> appears in the list of mapped particle properties, but"
                                    "is not advected by a particle method."));
@@ -1204,44 +1219,38 @@ namespace aspect
           // now for the rest. since we don't know whether there is a
           // component selector, start reading at the end and subtract
           // a number that might be a component selector
-          std::string value_and_comp = split_parts[1];
-          std::string comp;
-          if ((value_and_comp.size()>0) &&
-              ((value_and_comp[value_and_comp.size()-1] >= '0')
-               &&
-               (value_and_comp[value_and_comp.size()-1] <= '9')))
+          std::string particle_property = split_parts[1];
+          std::string component;
+          if ((particle_property.size()>3) &&
+              (particle_property[particle_property.size()-1] == ']'))
             {
-              comp = value_and_comp[value_and_comp.size()-1];
-              value_and_comp.erase (--value_and_comp.end());
+              particle_property.erase (--particle_property.end());
+
+              // this handles the (rare) case of multi digit components
+              while ((particle_property[particle_property.size()-1] >= '0') &&
+                  (particle_property[particle_property.size()-1] <= '9'))
+                {
+                  component.insert(component.begin(),particle_property[particle_property.size()-1]);
+                  particle_property.erase (--particle_property.end());
+                }
+
+              AssertThrow (particle_property[particle_property.size()-1] == '[',
+                           ExcMessage("Problem in parsing a component selector from the string <"
+                               + split_parts[1] + ">. A component selector has to be of the "
+                                   "form [x], where x must be an unsigned integer between 0 "
+                                   "and the maximum number of components of this particle property."));
+
+              particle_property.erase (--particle_property.end());
             }
 
-          // we've stopped reading component selectors now. there are three
-          // possibilities:
-          // - no characters are left. this means that value_and_comp only
-          //   consisted of a single word that only consisted of 'x', 'y'
-          //   and 'z's. then this would have been a mistake to classify
-          //   as a component selector, and we better undo it
-          // - the last character of value_and_comp is not a whitespace. this
-          //   means that the last word in value_and_comp ended in an 'x', 'y'
-          //   or 'z', but this was not meant to be a component selector.
-          //   in that case, put these characters back.
-          // - otherwise, we split successfully. eat spaces that may be at
-          //   the end of value_and_comp to get key
-          if (value_and_comp.size() == 0)
-            value_and_comp.swap (comp);
-          else if (value_and_comp[value_and_comp.size()-1] != ' ')
-            {
-              value_and_comp += comp;
-              comp = "";
-            }
-          else
-            {
-              while ((value_and_comp.size()>0) && (value_and_comp[value_and_comp.size()-1] == ' '))
-                value_and_comp.erase (--value_and_comp.end());
-            }
+          // we've stopped reading component selectors now.
+          // eat spaces that may be at the end of particle_property to get key
+          while ((particle_property.size()>0) && (particle_property[particle_property.size()-1] == ' '))
+            particle_property.erase (--particle_property.end());
 
           // finally, put it into the list
-          mapped_particle_properties.insert(std::make_pair(key,std::make_pair(value_and_comp,atoi(comp.c_str()))));
+          mapped_particle_properties.insert(std::make_pair(compositional_field_index,
+                                                           std::make_pair(particle_property,atoi(component.c_str()))));
         }
     }
     prm.leave_subsection ();

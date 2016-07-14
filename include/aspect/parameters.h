@@ -94,6 +94,20 @@ namespace aspect
     };
 
     /**
+     * A struct that describes the available methods to solve
+     * advected fields. This type is at the moment only used to determine how
+     * to advect each compositional field.
+     */
+    struct AdvectionFieldMethod
+    {
+      enum Kind
+      {
+        fem_field,
+        particles
+      };
+    };
+
+    /**
      * Constructor. Fills the values of member functions from the given
      * parameter object.
      *
@@ -295,13 +309,13 @@ namespace aspect
     std::vector<std::string>       names_of_compositional_fields;
 
     /**
-     * A vector that contains the field method for every compositional
+     * A vector that contains the advection field method for every compositional
      * field. Consequently the vector has n_compositional_fields entries.
      */
-    std::vector<std::string> compositional_field_methods;
+    std::vector<typename AdvectionFieldMethod::Kind> compositional_field_methods;
 
     /**
-     * Map from compositional field name to a pair "particle property", "component",
+     * Map from compositional index to a pair "particle property", "component",
      * where particle property is a string that can be mapped to one of the
      * particle property plugins.
      * Component denotes which component of the particle property is to be
@@ -309,7 +323,7 @@ namespace aspect
      * the component and it is of the format "[0][1][2]". In case no component
      * is specified it defaults to 0.
      */
-    std::map<std::string, std::pair<std::string,unsigned int> > mapped_particle_properties;
+    std::map<unsigned int, std::pair<std::string,unsigned int> > mapped_particle_properties;
 
     std::vector<unsigned int>      normalized_fields;
     /**

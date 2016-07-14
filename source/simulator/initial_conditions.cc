@@ -205,22 +205,20 @@ namespace aspect
     const Particle::Interpolator::Interface<dim> *particle_interpolator = &tracer_postprocessor->get_particle_world().get_interpolator();
     const Particle::Property::Manager<dim> *particle_property_manager = &tracer_postprocessor->get_particle_world().get_property_manager();
 
-    const std::string composition_name = introspection.name_for_compositional_index(advection_field.compositional_variable);
-
     unsigned int particle_property;
 
     if (parameters.mapped_particle_properties.size() != 0)
       {
-        const std::pair<std::string,unsigned int> particle_property_and_component = parameters.mapped_particle_properties.find(composition_name)->second;
+        const std::pair<std::string,unsigned int> particle_property_and_component = parameters.mapped_particle_properties.find(advection_field.compositional_variable)->second;
 
         particle_property = particle_property_manager->get_property_component_by_name(particle_property_and_component.first)
                             + particle_property_and_component.second;
       }
     else
       {
-        particle_property = std::count(introspection.field_methods.begin(),
-                                       introspection.field_methods.begin() + advection_field.compositional_variable,
-                                       Introspection<dim>::FieldMethod::particles);
+        particle_property = std::count(introspection.compositional_field_methods.begin(),
+                                       introspection.compositional_field_methods.begin() + advection_field.compositional_variable,
+                                       Parameters<dim>::AdvectionFieldMethod::particles);
         AssertThrow(particle_property <= particle_property_manager->get_n_property_components(),
                     ExcMessage("Can not automatically match particle properties to fields, because there are"
                                "more fields that are marked as particle advected than particle properties"));
@@ -442,7 +440,7 @@ namespace aspect
 {
 #define INSTANTIATE(dim) \
   template void Simulator<dim>::set_initial_temperature_and_compositional_fields(); \
-  template void Simulator<dim>::compute_initial_pressure_field();
+  template void Simulator<dim>::compute_initial_pressure_field(); \
   template void Simulator<dim>::interpolate_particle_properties(const AdvectionField &);
 
 

@@ -111,10 +111,10 @@ namespace aspect
   }
 
   template <int dim>
-  typename Introspection<dim>::FieldMethod::kind
-  Simulator<dim>::AdvectionField::method(const Introspection<dim> &introspection) const
+  typename Parameters<dim>::AdvectionFieldMethod::Kind
+  Simulator<dim>::AdvectionField::advection_method(const Introspection<dim> &introspection) const
   {
-    return introspection.field_methods[compositional_variable];
+    return introspection.compositional_field_methods[compositional_variable];
   }
 
   template <int dim>

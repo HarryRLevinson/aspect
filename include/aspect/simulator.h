@@ -247,10 +247,10 @@ namespace aspect
 
         /**
          * Return the method that is used to solve the advection of this field
-         * (i.e. 'field', 'particles').
+         * (i.e. 'fem_field', 'particles').
          */
-        typename Introspection<dim>::FieldMethod::kind
-        method (const Introspection<dim> &introspection) const;
+        typename Parameters<dim>::AdvectionFieldMethod::Kind
+        advection_method (const Introspection<dim> &introspection) const;
 
         /**
          * Look up the component index for this temperature or compositional

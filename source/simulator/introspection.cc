@@ -169,23 +169,9 @@ namespace aspect
     base_elements (internal::setup_base_elements<dim>(*this)),
     component_masks (*this),
     system_dofs_per_block (n_blocks),
+    compositional_field_methods(parameters.compositional_field_methods),
     composition_names(parameters.names_of_compositional_fields)
-  {
-    for (unsigned int i = 0; i < parameters.n_compositional_fields; ++i)
-      {
-        typename FieldMethod::kind method;
-        if (parameters.compositional_field_methods[i] == "continuous field")
-          method = FieldMethod::continuous_fem_field;
-        else if (parameters.compositional_field_methods[i] == "discontinuous field")
-          method = FieldMethod::discontinuous_fem_field;
-        else if (parameters.compositional_field_methods[i] == "particles")
-          method = FieldMethod::particles;
-        else
-          AssertThrow(false,ExcNotImplemented());
-
-        field_methods.push_back(method);
-      }
-  }
+  {}
 
 
   template <int dim>
