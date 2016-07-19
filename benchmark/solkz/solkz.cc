@@ -666,8 +666,8 @@ namespace aspect
     {
       // defined as given in the Duretz et al. paper
       static const double B = 0.5 * std::log(1e6);
-//      return std::exp(2*B*p[1]);
-      return comp[1];
+      return std::exp(2*B*p[1]);
+//      return comp[1];
     }
 
 
@@ -843,10 +843,10 @@ namespace aspect
       Vector<float> cellwise_errors_pl2 (this->get_triangulation().n_active_cells());
 
       ComponentSelectFunction<dim> comp_u(std::pair<unsigned int, unsigned int>(0,dim),
-                                          dim+2);
-      ComponentSelectFunction<dim> comp_p(dim, dim+2);
+                                          dim+3);
+      ComponentSelectFunction<dim> comp_p(dim, dim+3);
 
-/*      VectorTools::integrate_difference (this->get_mapping(),this->get_dof_handler(),
+      VectorTools::integrate_difference (this->get_mapping(),this->get_dof_handler(),
                                          this->get_solution(),
                                          *ref_func,
                                          cellwise_errors_u,
@@ -879,12 +879,11 @@ namespace aspect
       const double p_l1 = Utilities::MPI::sum(cellwise_errors_p.l1_norm(),this->get_mpi_communicator());
       const double u_l2 = std::sqrt(Utilities::MPI::sum(cellwise_errors_ul2.norm_sqr(),this->get_mpi_communicator()));
       const double p_l2 = std::sqrt(Utilities::MPI::sum(cellwise_errors_pl2.norm_sqr(),this->get_mpi_communicator()));
-*/
-      const double u_l1 = 1; 
+/*      const double u_l1 = 1;
       const double p_l1 = 1;
       const double u_l2 = 1;
       const double p_l2 = 1;
-      std::ostringstream os;
+ */     std::ostringstream os;
       os << std::scientific << u_l1
          << ", " << p_l1
          << ", " << u_l2
