@@ -9,8 +9,8 @@ set Dimension                              = 2
 
 set Use years in output instead of seconds = true
 set Start time                             = 0
-set End time                               = 2e10
-set CFL number                             = 1.0
+set End time                               = 1e10
+set CFL number                             = 0.9
 set Output directory = depth_dependent_density
 
 # Then there are variables that describe the tolerance of
@@ -40,9 +40,9 @@ subsection Geometry model
 
   subsection Box
     set X extent = 6E6
-    set X repetitions = 48
+    set X repetitions = 128
     set Y extent = 2E6         # = b or h or D (in meters m)
-    set Y repetitions = 16
+    set Y repetitions = 64
   end
 end
 
@@ -184,8 +184,8 @@ subsection Mesh refinement
 # set Strategy                           = composition
   set Initial global refinement          = 0
   set Time steps between mesh refinement = 0
-  set Coarsening fraction                = 0.01
-  set Refinement fraction                = 0.99 
+#  set Coarsening fraction                = 0.01
+#  set Refinement fraction                = 0.99
 end
 
 # The final part is to specify what ASPECT should do with the
@@ -197,18 +197,46 @@ end
 # visualization. 
 
 subsection Postprocess
-  set List of postprocessors = basic statistics, visualization, heat flux statistics, velocity statistics
+  set List of postprocessors = basic statistics, visualization, heat flux statistics, velocity statistics, tracers
 
   subsection Visualization
     set List of output variables = density, viscosity
     set Output format                 = vtu
-#    set Number of grouped files       = 16
+    set Number of grouped files       = 4
     set Time between graphical output = 1e8
+  end
+
+  subsection Tracers
+    set Number of tracers = 40960
+    set Time between data output = 1e8
+    set Data output format = vtu
+#    set List of tracer properties = velocity,function, initial composition, initial position
+
+    subsection Function
+      set Variable names      = x,z
+      set Function expression = if( (z>0.2+0.02*cos(pi*x/0.9142)) , 0 , 1 )
+    end
+
+    set Particle generator name = uniform box
+
+    subsection Generator
+      subsection Uniform box
+        set Minimum x = 10
+        set Maximum x = 5.99999e6
+        set Minimum y = 10
+        set Maximum y = 0.99999e6
+      end
+    end
   end
 end
 
 subsection Termination criteria
-  set Checkpoint on termination = false
-  set Termination criteria = end step
+  set Checkpoint on termination = true
+  set Termination criteria = end time
   set End step = 10
+end
+
+subsection Checkpointing
+# Every half hour, lets generate a checkpoint file
+  set Time between checkpoint         = 1800
 end

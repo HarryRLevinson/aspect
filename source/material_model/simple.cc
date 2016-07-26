@@ -57,12 +57,14 @@ namespace aspect
                            :
                            0.0;
           const double depth = this->get_geometry_model().depth(in.position[i]);
-          if (depth > 0.5 * 1E6 ) {
+
+          if (depth > 0.5 * 2E6 ) {
             out.densities[i] = reference_rho * (1 - thermal_alpha * (in.temperature[i] - reference_T)) + compositional_delta_rho;
           }
-          else
-           {out.densities[i] = reference_rho * (1 - thermal_alpha * (in.temperature[i] - reference_T)) - compositional_delta_rho;
+          else {
+            out.densities[i] = reference_rho * (1 - thermal_alpha * (in.temperature[i] - reference_T)) - compositional_delta_rho;
           }
+
           out.thermal_expansion_coefficients[i] = thermal_alpha;
           out.specific_heat[i] = reference_specific_heat;
           out.thermal_conductivities[i] = k_value;
