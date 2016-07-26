@@ -37,31 +37,32 @@ namespace aspect
       for (unsigned int i=0; i < in.position.size(); ++i)
         {
           const double delta_temp = in.temperature[i]-reference_T;
-          const double temperature_dependence = (reference_T > 0
-                                                 ?
-                                                 std::max(std::min(std::exp(-thermal_viscosity_exponent*delta_temp/reference_T),
-                                                                   1e2),
-                                                          1e-2)
-                                                 :
-                                                 1.0);
-
-          out.viscosities[i] = ((composition_viscosity_prefactor != 1.0) && (in.composition[i].size()>0))
-                               ?
-                               //Geometric interpolation
-                               pow(10.0, ((1-in.composition[i][0]) * log10(eta*temperature_dependence)
-                                          + in.composition[i][0] * log10(eta*composition_viscosity_prefactor*temperature_dependence)))
-                               :
-                               temperature_dependence * eta;
-
+          out.viscosities[i] = eta;
+//          const double temperature_dependence = (reference_T > 0
+//                                                 ?
+//                                                 std::max(std::min(std::exp(-thermal_viscosity_exponent*delta_temp/reference_T),
+//                                                                   1e2),
+//                                                          1e-2)
+//                                                 :
+//                                                 1.0);
+//          out.viscosities[i] = ((composition_viscosity_prefactor != 1.0) && (in.composition[i].size()>0)
+//                               ?
+//                               //Geometric interpolation
+//                               pow(10.0, ((1-in.composition[i][0]) * log10(eta*temperature_dependence)
+//                                          + in.composition[i][0] * log10(eta*composition_viscosity_prefactor*temperature_dependence))):
+//                               temperature_dependence * eta;
           const double c = (in.composition[i].size()>0)
                            ?
                            std::max(0.0, in.composition[i][0])
                            :
                            0.0;
-
-          out.densities[i] = reference_rho * (1 - thermal_alpha * (in.temperature[i] - reference_T))
-                             + compositional_delta_rho * c;
-
+          const double depth = this->get_geometry_model().depth(in.position[i]);
+          if (depth > 0.5 * 1E6 ) {
+            out.densities[i] = reference_rho * (1 - thermal_alpha * (in.temperature[i] - reference_T)) + compositional_delta_rho;
+          }
+          else
+           {out.densities[i] = reference_rho * (1 - thermal_alpha * (in.temperature[i] - reference_T)) - compositional_delta_rho;
+          }
           out.thermal_expansion_coefficients[i] = thermal_alpha;
           out.specific_heat[i] = reference_specific_heat;
           out.thermal_conductivities[i] = k_value;
