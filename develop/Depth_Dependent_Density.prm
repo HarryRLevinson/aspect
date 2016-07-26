@@ -187,15 +187,6 @@ subsection Mesh refinement
   set Coarsening fraction                = 0.01
   set Refinement fraction                = 0.99 
 end
-subsection Discretization
-  set Use discontinuous composition discretization = true
-#  set Use discontinuous temperature discretization = true
-  subsection Stabilization parameters
-      set Use limiter for discontinuous composition solution = true # apply the limiter to the DG solutions
-      set Global composition maximum = 1.0
-      set Global composition minimum = 0.0
-  end
-end
 
 # The final part is to specify what ASPECT should do with the
 # solution once computed at the end of every time step. The
