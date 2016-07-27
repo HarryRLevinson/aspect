@@ -34,8 +34,8 @@ namespace aspect
                                                              const std::vector<Tensor<1,dim> > &,
                                                              std::vector<double> &data) const
       {
-        for (unsigned int i = 0; i < dim; i++)
-          data.push_back(position[i]);
+        // Use initial position to model density
+        data.push_back(-std::sin(2*position[1])*std::cos(3*numbers::PI*position[0]));
       }
 
       template <int dim>

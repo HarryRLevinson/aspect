@@ -89,7 +89,6 @@
           0
           0
           0
-          0
         </DataArray>
         <DataArray type="Float64" Name="initial position" NumberOfComponents="3" Format="ascii">
           0.638695 0.488281 0

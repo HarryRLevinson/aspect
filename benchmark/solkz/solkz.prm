@@ -8,9 +8,9 @@ set Additional shared libraries            = ./libsolkz.so
 set Dimension                              = 2
 
 set Start time                             = 0
-set End time                               = 0
+set End time                               = 1000
 
-set Output directory                       = output
+set Output directory                       = output-least-square-3
 
 set Pressure normalization                 = volume
 set Nonlinear solver scheme                = Stokes only
@@ -23,7 +23,9 @@ subsection Geometry model
 
   subsection Box
     set X extent = 1
+    set X repetitions = 32
     set Y extent = 1
+    set Y repetitions = 32
   end
 end
 
@@ -68,12 +70,68 @@ end
 
 subsection Mesh refinement
   set Initial adaptive refinement              = 0
-  set Initial global refinement                = 5
+  set Initial global refinement                = 0
 end
 
+
+############### Parameters describing the compositional field
+# Note: The compositional field is what drives the flow
+# in this example
+
+subsection Compositional fields
+  set Number of fields = 2
+  set Names of fields = density_comp, viscosity_comp
+  set Compositional field methods = particles, particles
+  set Mapped particle properties = density_comp:initial position, viscosity_comp:function
+end
+
+subsection Compositional initial conditions
+  set Model name = function
+  subsection Function
+    set Variable names      = x,z
+    set Function constants  = pi=3.1415926
+    set Function expression = -1 * sin(2*z)*cos(3*pi*x); exp(2*(0.5*ln(1E6))*z)
+  end
+end
 
 ############### Parameters describing what to do with the solution
 
 subsection Postprocess
-  set List of postprocessors = SolKzPostprocessor, visualization
+  set List of postprocessors = SolKzPostprocessor, visualization, tracers
+
+  subsection Visualization
+    set Output format                 = vtu
+    set Number of grouped files       = 1
+    set Time between graphical output = 0
+    set List of output variables = density, viscosity
+  end
+
+  subsection Tracers
+    set Number of tracers = 100000
+    set Time between data output = 0
+    set Data output format = vtu
+    set List of tracer properties = initial position, function
+    set Interpolation scheme = least square
+
+    subsection Function
+      set Variable names      = x,z
+      set Function constants  = pi=3.1415926
+      set function expression = exp(2*(0.5*ln(1e6))*z)
+#      set Function expression = -1 * sin(2*z)*cos(3*pi*x)
+    end
+
+    set Particle generator name = random uniform
+
+    subsection Generator
+      subsection Probability density function
+        set Variable names      = x,z
+        set Function expression = x*x*z
+      end
+    end
+  end
+end
+
+subsection Termination criteria
+  set End step = 100
+  set Termination criteria = end step
 end
