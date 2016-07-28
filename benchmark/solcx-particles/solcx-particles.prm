@@ -1,19 +1,21 @@
 # A description of the SolCX benchmark for which a known solution
 # is available. See the manual for more information.
 
-set Additional shared libraries            = /home/dev/Runs/solcx-particles/libsolcx-particles.so
+set Additional shared libraries = /home/egpuckett/local/Computations/2016_Summer_REU/SolCX/Benchmarks/Particles/SolCX_Library/libsolcx-particles.so
 
 ############### Global parameters
 
 set Dimension                              = 2
 
 set Start time                             = 0
-set End time                               = 0
+set End time                               = 1e10
 
-set Output directory                       = output
+set Output directory                       = 32x32_output
 
 set Pressure normalization                 = volume
-set Nonlinear solver scheme                = IMPES
+
+# Default solver is IMPES
+# set Nonlinear solver scheme                = IMPES
 
 ############### Parameters describing the model
 
@@ -22,7 +24,9 @@ subsection Geometry model
 
   subsection Box
     set X extent = 1
+    set X repetitions = 32
     set Y extent = 1
+    set Y repetitions = 32
   end
 end
 
@@ -33,15 +37,15 @@ subsection Model settings
   set Zero velocity boundary indicators       =
 end
 
-
 subsection Material model
   set Model name = SolCxMaterial
 
   subsection SolCx
+    # EGP & HL added this on Thu Jul 28 09:53:27 PDT 2016
+    set Background density = 1.0
     set Viscosity jump = 1e3
   end
 end
-
 
 subsection Gravity model
   set Model name = vertical
@@ -54,12 +58,9 @@ subsection Boundary temperature model
   set Model name = box
 end
 
-
 subsection Initial conditions
   set Model name = perturbed box
 end
-
-
 
 ############### Parameters describing the discretization
 
@@ -71,7 +72,7 @@ end
 
 subsection Mesh refinement
   set Initial adaptive refinement              = 0
-  set Initial global refinement                = 6
+  set Initial global refinement                = 0
 end
 
 ############### Parameters describing the compositional field
@@ -79,18 +80,20 @@ end
 # in this example
 
 subsection Compositional fields
-  set Number of fields = 2
-  set Names of fields = density_comp, viscosity_comp
-  set Compositional field methods = particles, particles
-  set Mapped particle properties = density_comp:function1, viscosity_comp:function2
+  set Number of fields = 1
+  set Names of fields = density_comp #, viscosity_comp
+  set Compositional field methods = particles #, particles
+  # set Mapped particle properties = density_comp:function1, viscosity_comp:function2
+  set Mapped particle properties = density_comp:function1
 end
 
 subsection Compositional initial conditions
   set Model name = function
   subsection Function
     set Variable names      = x,z
-    set Function constants  = pi=3.1415926, eta_b=1e6, ref_density=0
-    set Function expression = ref_density - sin(pi*z) * cos(pi*x); if(x<0.5, 1, eta_b)
+    set Function constants  = pi=3.1415926, eta_b=1e3, ref_density=1.0
+    # set Function expression = ref_density - sin(pi*z) * cos(pi*x); if(x<0.5, 1, eta_b)
+    set Function expression = ref_density - sin(pi*z) * cos(pi*x)
   end
 end
 
@@ -108,18 +111,18 @@ subsection Postprocess
   end
 
   subsection Tracers
-    set Number of tracers = 65536
+    set Number of tracers = 16384
     set Time between data output = 0
     set Data output format = vtu
     set List of tracer properties = function
     set Integration scheme = rk4
     set Interpolation scheme = cell average
-    set Maximum tracers per cell = 65536
+    set Maximum tracers per cell = 16384
 
     subsection Function
       set Number of functions = 2
       set Variable names      = x,z
-      set Function constants  = pi=3.1415926, eta_b=1e6, ref_density=0
+      set Function constants  = pi=3.1415926, eta_b=1e3, ref_density=1.0
       set Function expression = ref_density - sin(pi*z) * cos(pi*x); if(x<0.5, 1, eta_b)
     end
 
@@ -132,16 +135,16 @@ subsection Postprocess
       end
 
       subsection Uniform box
-       set Minimum x = 0.00001
-       set Maximum x = 0.99999
-       set Minimum y = 0.00001
-       set Maximum y = 0.99999
+       set Minimum x = 0.015625
+       set Maximum x = 0.984375
+       set Minimum y = 0.015625
+       set Maximum y = 0.984375
       end
     end
   end
 end
 
 subsection Termination criteria
-  set End step = 250
+  set End step = 750
   set Termination criteria = end step
 end

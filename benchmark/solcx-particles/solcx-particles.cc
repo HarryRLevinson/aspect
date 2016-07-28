@@ -2621,9 +2621,10 @@ namespace aspect
              const std::vector<double> &composition,
              const Point<dim> &p) const
     {
-      // defined as given in the paper, plus the constant
-      // background density
-      return composition[0];
+      // defined as given in the paper, plus the constant background density
+      // This will return background_density if there are no particles in the cell
+      // EGP & HL on Thu Jul 28 09:53:27 PDT 2016
+      return background_density - composition[0];
       //return background_density-std::sin(numbers::PI*p[1])*std::cos(numbers::PI*p[0]);
     }
 

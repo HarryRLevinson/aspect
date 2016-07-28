@@ -71,19 +71,26 @@ namespace aspect
         const unsigned int n_properties = particles.begin()->second.get_properties().size();
         std::vector<double> cell_properties (n_properties,0.0);
 
-        AssertThrow(n_particles != 0,
-                    ExcMessage("At least one cell contained no particles. The 'constant "
-                               "average' interpolation scheme does not support this case. "));
+//        AssertThrow(n_particles != 0,
+//                    ExcMessage("At least one cell contained no particles. The 'constant "
+//                               "average' interpolation scheme does not support this case. "));
+        if (n_particles == 0)
+        {
+          for (unsigned int i = 0; i < n_properties; ++i)
+            cell_properties[i] = this->get_material_model().reference_density();
+        }
+       else
+        {
 
-        for (typename std::multimap<types::LevelInd, Particle<dim> >::const_iterator particle = particle_range.first;
-             particle != particle_range.second; ++particle)
-          {
-            const std::vector<double> particle_properties = particle->second.get_properties();
+          for (typename std::multimap<types::LevelInd, Particle<dim> >::const_iterator particle = particle_range.first;
+               particle != particle_range.second; ++particle)
+            {
+              const std::vector<double> particle_properties = particle->second.get_properties();
 
-            for (unsigned int i = 0; i < n_properties; ++i)
-              cell_properties[i] += particle_properties[i] / n_particles;
+              for (unsigned int i = 0; i < n_properties; ++i)
+                cell_properties[i] += particle_properties[i] / n_particles;
           }
-
+        }
         const std::vector<std::vector<double> > properties(positions.size(),cell_properties);
 
         return properties;
