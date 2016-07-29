@@ -27,7 +27,6 @@
 
 #include <deal.II/base/parameter_handler.h>
 
-#include <dirent.h>
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <boost/lexical_cast.hpp>
@@ -641,7 +640,8 @@ namespace aspect
                            "Heister and Bangerth that describes ASPECT, see \\cite{KHB12}. "
                            "Rather, the paper always uses 2 as the exponent in the definition "
                            "of the entropy, following equation (15) of the paper. The full "
-                           "approach is discussed in \\cite{GPP11}.) "
+                           "approach is discussed in \\cite{GPP11}.) Note that this is not the "
+                           "thermal expansion coefficient, also commonly referred to as $\\alpha$."
                            "Units: None.");
         prm.declare_entry ("cR", "0.33",
                            Patterns::Double (0),
@@ -664,6 +664,19 @@ namespace aspect
                            "different value than described there: It can be chosen as stated there for "
                            "uniformly refined meshes, but it needs to be chosen larger if the mesh has "
                            "cells that are not squares or cubes.) Units: None.");
+        prm.declare_entry ("gamma", "0.0",
+                           Patterns::Double (0),
+                           "The strain rate scaling factor in the artificial viscosity "
+                           "stabilization. This parameter determines how much the strain rate (in addition "
+                           "to the velocity) should influence the stabilization. (This parameter does "
+                           "not correspond to any variable in the 2012 GJI paper by Kronbichler, "
+                           "Heister and Bangerth that describes ASPECT. Rather, the paper always uses "
+                           "0, i.e. they specify the maximum dissipation $\\nu_h^\\text{max}$ as "
+                           "$\\nu_h^\\text{max}\\vert_K = \\alpha_\\text{max} h_K \\|\\mathbf u\\|_{\\infty,K}$. "
+                           "Here, we use "
+                           "$\\|\\lvert\\mathbf u\\rvert + \\gamma h_K \\lvert\\varepsilon (\\mathbf u)\\rvert\\|_{\\infty,K}$ "
+                           "instead of $\\|\\mathbf u\\|_{\\infty,K}$. "
+                           "Units: None.");
         prm.declare_entry ("Discontinuous penalty", "10",
                            Patterns::Double (0),
                            "The value used to penalize discontinuities in the discontinuous Galerkin "
@@ -826,24 +839,9 @@ namespace aspect
     else if (output_directory[output_directory.size()-1] != '/')
       output_directory += "/";
 
-    // verify that the output directory actually exists. if it doesn't, create
-    // it on processor zero
-    if ((Utilities::MPI::this_mpi_process(mpi_communicator) == 0) &&
-        (opendir(output_directory.c_str()) == NULL))
-      {
-        std::cout << "\n"
-                  << "-----------------------------------------------------------------------------\n"
-                  << "The output directory <" << output_directory
-                  << "> provided in the input file appears not to exist.\n"
-                  << "ASPECT will create it for you.\n"
-                  << "-----------------------------------------------------------------------------\n\n"
-                  << std::endl;
-
-        const int error = Utilities::mkdirp(output_directory, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
-
-        AssertThrow (error == 0,
-                     ExcMessage (std::string("Can't create the output directory at <") + output_directory + ">"));
-      }
+    Utilities::create_directory (output_directory,
+                                 mpi_communicator,
+                                 false);
 
     if (prm.get ("Resume computation") == "true")
       resume_computation = true;
@@ -993,17 +991,12 @@ namespace aspect
         stabilization_alpha                 = prm.get_integer ("alpha");
         stabilization_c_R                   = prm.get_double ("cR");
         stabilization_beta                  = prm.get_double ("beta");
+        stabilization_gamma                 = prm.get_double ("gamma");
         discontinuous_penalty               = prm.get_double ("Discontinuous penalty");
         use_limiter_for_discontinuous_temperature_solution
           = prm.get_bool("Use limiter for discontinuous temperature solution");
         use_limiter_for_discontinuous_composition_solution
           = prm.get_bool("Use limiter for discontinuous composition solution");
-        if (use_limiter_for_discontinuous_temperature_solution
-            || use_limiter_for_discontinuous_composition_solution)
-          AssertThrow (nonlinear_solver == NonlinearSolver::IMPES,
-                       ExcMessage ("The bound preserving limiter currently is "
-                                   "only implemented for the scheme using IMPES nonlinear solver. "
-                                   "Please deactivate the limiter or change the solver scheme."));
         global_temperature_max_preset       = prm.get_double ("Global temperature maximum");
         global_temperature_min_preset       = prm.get_double ("Global temperature minimum");
         global_composition_max_preset       = Utilities::string_to_double
@@ -1422,6 +1415,7 @@ namespace aspect
     MaterialModel::declare_parameters<dim> (prm);
     HeatingModel::Manager<dim>::declare_parameters (prm);
     GeometryModel::declare_parameters <dim>(prm);
+    InitialTopographyModel::declare_parameters <dim>(prm);
     GravityModel::declare_parameters<dim> (prm);
     InitialConditions::declare_parameters<dim> (prm);
     CompositionalInitialConditions::declare_parameters<dim> (prm);

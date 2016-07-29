@@ -45,6 +45,7 @@
 #include <aspect/simulator_signals.h>
 #include <aspect/material_model/interface.h>
 #include <aspect/heating_model/interface.h>
+#include <aspect/geometry_model/initial_topography_model/interface.h>
 #include <aspect/geometry_model/interface.h>
 #include <aspect/gravity_model/interface.h>
 #include <aspect/boundary_temperature/interface.h>
@@ -262,6 +263,20 @@ namespace aspect
          * See Introspection::base_elements for more information.
          */
         unsigned int base_element(const Introspection<dim> &introspection) const;
+
+        /**
+         * Return the FEValues scalar extractor for this temperature
+         * or compositional field.
+         * This function is implemented in
+         * <code>source/simulator/helper_functions.cc</code>.
+         */
+        FEValuesExtractors::Scalar scalar_extractor(const Introspection<dim> &introspection) const;
+
+        /**
+         * Look up the polynomial degree order for this temperature or compositional
+         * field. See Introspection::polynomial_degree for more information.
+         */
+        unsigned int polynomial_degree(const Introspection<dim> &introspection) const;
       };
 
 
@@ -1040,16 +1055,6 @@ namespace aspect
       stokes_matrix_depends_on_solution () const;
 
       /**
-       * Generate and output some statistics like timing information and
-       * memory consumption. Whether this function does anything or not is
-       * controlled through the variable aspect::output_parallel_statistics.
-       *
-       * This function is implemented in
-       * <code>source/simulator/helper_functions.cc</code>.
-       */
-      void output_program_stats();
-
-      /**
        * This function is called at the end of each time step and writes the
        * statistics object that contains data like the current time, the
        * number of linear solver iterations, and whatever the postprocessors
@@ -1147,6 +1152,7 @@ namespace aspect
        * @name Variables that describe the physical setup of the problem
        * @{
        */
+      const std_cxx11::unique_ptr<InitialTopographyModel::Interface<dim> >    initial_topography_model;
       const std_cxx11::unique_ptr<GeometryModel::Interface<dim> >             geometry_model;
       const IntermediaryConstructorAction                                     post_geometry_model_creation_action;
       const std_cxx11::unique_ptr<MaterialModel::Interface<dim> >             material_model;

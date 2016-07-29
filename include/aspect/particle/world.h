@@ -88,6 +88,11 @@ namespace aspect
         get_property_manager() const;
 
         /**
+         * Do initial logic for handling pre-refinement steps
+         */
+        void setup_initial_state ();
+
+        /**
          * Initialize the particle properties.
          */
         void generate_particles();
@@ -419,8 +424,7 @@ namespace aspect
          * Initialize the particle properties of one cell.
          */
         void
-        local_initialize_particles(const typename DoFHandler<dim>::active_cell_iterator &cell,
-                                   const typename std::multimap<types::LevelInd, Particle<dim> >::iterator &begin_particle,
+        local_initialize_particles(const typename std::multimap<types::LevelInd, Particle<dim> >::iterator &begin_particle,
                                    const typename std::multimap<types::LevelInd, Particle<dim> >::iterator &end_particle);
 
         /**

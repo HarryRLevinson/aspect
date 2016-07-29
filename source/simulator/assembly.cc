@@ -502,13 +502,7 @@ namespace aspect
     const QGauss<dim> quadrature_formula (parameters.temperature_degree+1);
     const unsigned int n_q_points = quadrature_formula.size();
 
-    const FEValuesExtractors::Scalar field
-      = (advection_field.is_temperature()
-         ?
-         introspection.extractors.temperature
-         :
-         introspection.extractors.compositional_fields[advection_field.compositional_variable]
-        );
+    const FEValuesExtractors::Scalar field = advection_field.scalar_extractor(introspection);
 
     FEValues<dim> fe_values (finite_element, quadrature_formula,
                              update_values | update_JxW_values);
@@ -602,6 +596,9 @@ namespace aspect
         const Tensor<1,dim> velocity = (scratch.old_velocity_values[q] +
                                         scratch.old_old_velocity_values[q]) / 2;
 
+        const double strain_rate = ((scratch.old_strain_rates[q]
+                                     + scratch.old_old_strain_rates[q]) / 2).norm();
+
         if (parameters.stabilization_alpha == 2)
           {
             const double field = (scratch.old_field_values[q] + scratch.old_old_field_values[q]) / 2;
@@ -609,7 +606,9 @@ namespace aspect
           }
 
         max_residual = std::max (residual[q],     max_residual);
-        max_velocity = std::max (std::sqrt (velocity*velocity), max_velocity);
+        max_velocity = std::max (velocity.norm()
+                                 + parameters.stabilization_gamma * strain_rate * cell_diameter,
+                                 max_velocity);
 
         if (advection_field.is_temperature())
           {
@@ -692,11 +691,7 @@ namespace aspect
     AdvectionSystem<dim> scratch (finite_element,
                                   finite_element.base_element(advection_field.base_element(introspection)),
                                   *mapping,
-                                  QGauss<dim>((advection_field.is_temperature()
-                                               ?
-                                               parameters.temperature_degree
-                                               :
-                                               parameters.composition_degree)
+                                  QGauss<dim>(advection_field.polynomial_degree(introspection)
                                               +
                                               (parameters.stokes_velocity_degree+1)/2),
                                   /* Because we can only get here in the continuous case, which never requires
@@ -726,12 +721,7 @@ namespace aspect
         Assert (scratch.grad_phi_field.size() == advection_dofs_per_cell, ExcInternalError());
         Assert (scratch.phi_field.size() == advection_dofs_per_cell, ExcInternalError());
 
-        const FEValuesExtractors::Scalar solution_field
-          = (advection_field.is_temperature()
-             ?
-             introspection.extractors.temperature
-             :
-             introspection.extractors.compositional_fields[advection_field.compositional_variable]);
+        const FEValuesExtractors::Scalar solution_field = advection_field.scalar_extractor(introspection);
 
         scratch.finite_element_values.reinit (cell);
 
@@ -1137,13 +1127,7 @@ namespace aspect
 
           const unsigned int solution_component = advection_field.component_index(introspection);
 
-          const FEValuesExtractors::Scalar solution_field
-            = (advection_field.is_temperature()
-               ?
-               introspection.extractors.temperature
-               :
-               introspection.extractors.compositional_fields[advection_field.compositional_variable]
-              );
+          const FEValuesExtractors::Scalar solution_field = advection_field.scalar_extractor(introspection);
 
           for (unsigned int q=0; q<n_q_points; ++q)
             {
@@ -1238,7 +1222,7 @@ namespace aspect
                     {
                       data.local_matrix(i,j)
                       += (
-                           (this->get_timestep() * (conductivity + artificial_viscosity)
+                           (time_step * (conductivity + artificial_viscosity)
                             * (scratch.grad_phi_field[i] * scratch.grad_phi_field[j]))
                            + ((time_step * (scratch.phi_field[i] * (current_u * scratch.grad_phi_field[j])))
                               + (factor * scratch.phi_field[i] * scratch.phi_field[j])) *
@@ -1337,13 +1321,7 @@ namespace aspect
 
           const unsigned int solution_component = advection_field.component_index(introspection);
 
-          const FEValuesExtractors::Scalar solution_field
-            = (advection_field.is_temperature()
-               ?
-               introspection.extractors.temperature
-               :
-               introspection.extractors.compositional_fields[advection_field.compositional_variable]
-              );
+          const FEValuesExtractors::Scalar solution_field = advection_field.scalar_extractor(introspection);
 
           typename DoFHandler<dim>::face_iterator face = cell->face (face_no);
 
@@ -1539,13 +1517,7 @@ namespace aspect
 
           const unsigned int solution_component = advection_field.component_index(introspection);
 
-          const FEValuesExtractors::Scalar solution_field
-            = (advection_field.is_temperature()
-               ?
-               introspection.extractors.temperature
-               :
-               introspection.extractors.compositional_fields[advection_field.compositional_variable]
-              );
+          const FEValuesExtractors::Scalar solution_field = advection_field.scalar_extractor(introspection);
 
           typename DoFHandler<dim>::face_iterator face = cell->face (face_no);
 
@@ -2840,13 +2812,7 @@ namespace aspect
     Assert (scratch.grad_phi_field.size() == advection_dofs_per_cell, ExcInternalError());
     Assert (scratch.phi_field.size() == advection_dofs_per_cell, ExcInternalError());
 
-    const FEValuesExtractors::Scalar solution_field
-      = (advection_field.is_temperature()
-         ?
-         introspection.extractors.temperature
-         :
-         introspection.extractors.compositional_fields[advection_field.compositional_variable]
-        );
+    const FEValuesExtractors::Scalar solution_field = advection_field.scalar_extractor(introspection);
 
     const unsigned int solution_component = advection_field.component_index(introspection);
 
@@ -3065,11 +3031,7 @@ namespace aspect
     // (Note: All compositional fields have the same base element and therefore
     // the same composition_degree. Thus, we do not need to find out the degree
     // of the current field, but use the global instead)
-    const unsigned int advection_quadrature_degree = (advection_field.is_temperature()
-                                                      ?
-                                                      parameters.temperature_degree
-                                                      :
-                                                      parameters.composition_degree)
+    const unsigned int advection_quadrature_degree = advection_field.polynomial_degree(introspection)
                                                      +
                                                      (parameters.stokes_velocity_degree+1)/2;
 

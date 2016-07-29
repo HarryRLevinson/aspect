@@ -140,39 +140,25 @@ namespace aspect
       return introspection.base_elements.compositional_fields;
   }
 
-
   template <int dim>
-  void Simulator<dim>::output_program_stats()
+  FEValuesExtractors::Scalar
+  Simulator<dim>::AdvectionField::scalar_extractor(const Introspection<dim> &introspection) const
   {
-    if (!aspect::output_parallel_statistics)
-      return;
-
-    Utilities::System::MemoryStats stats;
-    Utilities::System::get_memory_stats(stats);
-    pcout << "VmPeak (proc0): " << stats.VmPeak/1024 << " mb" << std::endl;
-
-    // memory consumption:
-    const double mb = 1024*1024; //convert from bytes into mb
-    pcout << "memory in MB:" << std::endl
-          << "* tria " << triangulation.memory_consumption()/mb << std::endl
-          << "  - p4est " << triangulation.memory_consumption_p4est()/mb << std::endl
-          << "* DoFHandler " << dof_handler.memory_consumption()/mb <<std::endl
-          << "* ConstraintMatrix " << constraints.memory_consumption()/mb << std::endl
-          << "* current_constraints " << current_constraints.memory_consumption()/mb << std::endl
-          << "* Matrix " << system_matrix.memory_consumption()/mb << std::endl
-          << "* 5 Vectors " << 5*solution.memory_consumption()/mb << std::endl
-          << "* preconditioner " << (system_preconditioner_matrix.memory_consumption()
-//                                     + Amg_preconditioner->memory_consumption()
-                                     /*+Mp_preconditioner->memory_consumption()
-                                                                      +T_preconditioner->memory_consumption()*/)/mb
-          << std::endl
-          << "  - matrix " << system_preconditioner_matrix.memory_consumption()/mb << std::endl
-//          << "  - prec vel " << Amg_preconditioner->memory_consumption()/mb << std::endl
-          << "  - prec mass " << 0/*Mp_preconditioner->memory_consumption()/mb*/ << std::endl
-          << "  - prec T " << 0/*T_preconditioner->memory_consumption()/mb*/ << std::endl
-          << std::endl;
+    if (this->is_temperature())
+      return introspection.extractors.temperature;
+    else
+      return introspection.extractors.compositional_fields[compositional_variable];
   }
 
+  template <int dim>
+  unsigned int
+  Simulator<dim>::AdvectionField::polynomial_degree(const Introspection<dim> &introspection) const
+  {
+    if (this->is_temperature())
+      return introspection.polynomial_degree.temperature;
+    else
+      return introspection.polynomial_degree.compositional_fields;
+  }
 
 
   namespace
@@ -994,12 +980,8 @@ namespace aspect
      * in 2D: the combinations are 21, 12
      * in 3D: the combinations are 211, 121, 112
      */
-    const QGauss<1> quadrature_formula_1 (advection_field.is_temperature() ?
-                                          parameters.temperature_degree+1 :
-                                          parameters.composition_degree+1);
-    const QGaussLobatto<1> quadrature_formula_2 (advection_field.is_temperature() ?
-                                                 parameters.temperature_degree+1 :
-                                                 parameters.composition_degree+1);
+    const QGauss<1> quadrature_formula_1 (advection_field.polynomial_degree(introspection)+1);
+    const QGaussLobatto<1> quadrature_formula_2 (advection_field.polynomial_degree(introspection)+1);
 
     const unsigned int n_q_points_1 = quadrature_formula_1.size();
     const unsigned int n_q_points_2 = quadrature_formula_2.size();
@@ -1094,9 +1076,7 @@ namespace aspect
     Quadrature<dim> quadrature_formula(quadrature_points);
 
     // Quadrature rules only used for the numerical integration for better accuracy
-    const QGauss<dim> quadrature_formula_0 (advection_field.is_temperature() ?
-                                            parameters.temperature_degree+1 :
-                                            parameters.composition_degree+1);
+    const QGauss<dim> quadrature_formula_0 (advection_field.polynomial_degree(introspection)+1);
 
     const unsigned int n_q_points_0 = quadrature_formula_0.size();
 
@@ -1230,7 +1210,6 @@ namespace aspect
   template std::pair<double,double> Simulator<dim>::get_extrapolated_advection_field_range (const AdvectionField &advection_field) const; \
   template std::pair<double,bool> Simulator<dim>::compute_time_step () const; \
   template void Simulator<dim>::make_pressure_rhs_compatible(LinearAlgebra::BlockVector &vector); \
-  template void Simulator<dim>::output_program_stats(); \
   template void Simulator<dim>::output_statistics(); \
   template double Simulator<dim>::compute_initial_stokes_residual(); \
   template bool Simulator<dim>::stokes_matrix_depends_on_solution() const; \
