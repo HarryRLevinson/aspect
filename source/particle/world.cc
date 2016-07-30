@@ -97,6 +97,9 @@ namespace aspect
 
       std::vector<std::string> output_suffixes;
 
+      const std::string output_directory = output[0].get()->get_particle_output_location();
+      const std::string file_index = output[0].get()->get_file_index();
+
       for ( typename std::vector<std_cxx11::shared_ptr<Output::Interface<dim> > >::const_iterator itr= output.begin(); itr != output.end(); itr++)
         {
           output_suffixes.push_back((itr->get()->output_particle_data(particles,
@@ -106,15 +109,9 @@ namespace aspect
 
       std::string output_formats;
       for ( std::vector<std::string>::const_iterator itr = output_suffixes.begin(); itr != output_suffixes.end(); itr++)
-        {
-          output_formats += *itr + ",";
-        }
-
+        output_formats += *itr + ",";
       // Remove tailing comma.
       output_formats = output_formats.substr(0, output_formats.size()-1);
-
-      const std::string output_directory = output[0].get()->get_particle_output_location();
-      const std::string file_index = output[0].get()->get_file_index();
 
       if (output_suffixes.size() > 1)
         return output_directory + "particles-" + file_index + ".{" + output_formats + "}";
@@ -1114,9 +1111,7 @@ namespace aspect
       oa << (*this);
 
       for ( typename std::vector<std_cxx11::shared_ptr<Output::Interface<dim> > >::const_iterator itr= output.begin(); itr != output.end(); itr++)
-        {
-          itr->get()->save(os);
-        }
+        itr->get()->save(os);
     }
 
     template <int dim>
@@ -1127,9 +1122,7 @@ namespace aspect
       ia >> (*this);
 
       for ( typename std::vector<std_cxx11::shared_ptr<Output::Interface<dim> > >::const_iterator itr= output.begin(); itr != output.end(); itr++)
-        {
-          itr->get()->load(is);
-        }
+        itr->get()->load(is);
     }
 
     template <int dim>
@@ -1255,24 +1248,28 @@ namespace aspect
       auto last = std::unique(output_format_names.begin(), output_format_names.end());
       output_format_names.erase(last, output_format_names.end());
 
-      // Create an output object depending on what the parameters specify
-      if (std::find (output_format_names.begin(),
-                     output_format_names.end(),
-                     "none") == output_format_names.end())
+      // Create an output object depending on what the parameters specify so long as none has not been specified.
+      // If none and more than one other format is specified, then we ignore none.
+      AssertThrow ((std::find (output_format_names.begin(),
+                               output_format_names.end(),
+                               "none") == output_format_names.end())
+                   ||
+                   (output_format_names.size() == 1),
+                   ExcMessage ("If you specify 'none' for the output format for parameter \"Data output format\","
+                               "then this needs to be the only value given."));
+
+      if (output_format_names.size() != 1 || output_format_names[0] != "none")
+        for (std::vector<std::string>::const_iterator itr = output_format_names.begin();
+             itr != output_format_names.end(); itr++)
+          output.push_back(std_cxx11::shared_ptr<Output::Interface<dim>>
+                           (Output::create_particle_output<dim>(*itr)));
+
+      for ( typename std::vector<std_cxx11::shared_ptr<Output::Interface<dim> > >::iterator itr = output.begin(); itr != output.end(); itr++)
         {
-          for (std::vector<std::string>::const_iterator itr = output_format_names.begin();
-               itr != output_format_names.end(); itr++)
-            {
-              output.push_back(std_cxx11::shared_ptr<Output::Interface<dim>>
-                               (Output::create_particle_output<dim>(*itr)));
-            }
-          for ( typename std::vector<std_cxx11::shared_ptr<Output::Interface<dim> > >::iterator itr = output.begin(); itr != output.end(); itr++)
-            {
-              if (SimulatorAccess<dim> *sim = dynamic_cast<SimulatorAccess<dim> *>(itr->get()))
-                sim->initialize_simulator(this->get_simulator());
-              itr->get()->parse_parameters(prm);
-              itr->get()->initialize();
-            }
+          if (SimulatorAccess<dim> *sim = dynamic_cast<SimulatorAccess<dim> *>(itr->get()))
+            sim->initialize_simulator(this->get_simulator());
+          itr->get()->parse_parameters(prm);
+          itr->get()->initialize();
         }
 
       // Create an integrator object depending on the specified parameter

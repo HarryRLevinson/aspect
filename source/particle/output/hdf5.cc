@@ -257,7 +257,7 @@ namespace aspect
 
         file_index++;
 
-        return "hdf5";
+        return "h5";
 #else
         (void) property_component_list;
         (void) particles;

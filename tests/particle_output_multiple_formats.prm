@@ -96,7 +96,7 @@ subsection Postprocess
   subsection Tracers
     set Number of tracers = 16
     set Time between data output = 70
-    set Data output format = ascii, vtu, hdf5
+    set Data output format = ascii, hdf5, vtu
     set List of tracer properties = function, initial composition, initial position
 
     subsection Function
