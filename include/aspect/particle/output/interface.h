@@ -89,6 +89,27 @@ namespace aspect
                                const double current_time) = 0;
 
           /**
+           * Returns the particle file name taking into account the file index as well as the mpi proccess.
+           */
+          virtual
+          const std::string
+          get_file_name();
+
+          /**
+           * Get the absolute path where the specified particle output will be generated.
+           */
+          virtual
+          const std::string
+          get_particle_output_location();
+
+          /**
+           * Get the current file index.
+           */
+          virtual
+          const std::string
+          get_file_index();
+
+          /**
            * Read or write the data of this object for serialization
            */
           template <class Archive>

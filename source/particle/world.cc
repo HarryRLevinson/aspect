@@ -85,8 +85,6 @@ namespace aspect
     std::string
     World<dim>::generate_output() const
     {
-      std::vector<std::string> filenames;
-
       // If we do not write output
       // return early with the number of particles that were advected
       if (output.empty())
@@ -97,16 +95,31 @@ namespace aspect
                                   this->get_time() / year_in_seconds :
                                   this->get_time());
 
-      std::string filename;
+      std::vector<std::string> output_suffixes;
 
       for ( typename std::vector<std_cxx11::shared_ptr<Output::Interface<dim> > >::const_iterator itr= output.begin(); itr != output.end(); itr++)
         {
-          filename = (itr->get()->output_particle_data(particles,
-                                                       property_manager->get_data_info(),
-                                                       output_time));
+          output_suffixes.push_back((itr->get()->output_particle_data(particles,
+                                                                      property_manager->get_data_info(),
+                                                                      output_time)));
         }
 
-      return filename;
+      std::string output_formats;
+      for ( std::vector<std::string>::const_iterator itr = output_suffixes.begin(); itr != output_suffixes.end(); itr++)
+        {
+          output_formats += *itr + ",";
+        }
+
+      // Remove tailing comma.
+      output_formats = output_formats.substr(0, output_formats.size()-1);
+
+      const std::string output_directory = output[0].get()->get_particle_output_location();
+      const std::string file_index = output[0].get()->get_file_index();
+
+      if (output_suffixes.size() > 1)
+        return output_directory + "particles-" + file_index + ".{" + output_formats + "}";
+      else
+        return output_directory + "particles-" + file_index + "." +  output_formats;
     }
 
     template <int dim>

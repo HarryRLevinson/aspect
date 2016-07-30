@@ -48,16 +48,8 @@ namespace aspect
                                              const std::vector<std::pair<std::string, unsigned int> > &property_component_list,
                                              const double /*time*/)
       {
-        const std::string output_file_prefix =
-          this->get_output_directory()
-          + "particles/"
-          + "particle-"
-          + Utilities::int_to_string (file_index, 5);
-        const std::string full_filename =
-          output_file_prefix
-          + "."
-          + Utilities::int_to_string(Utilities::MPI::this_mpi_process(this->get_mpi_communicator()), 4)
-          + ".txt";
+        const std::string full_filename = get_particle_output_location()
+                                          + get_file_name();
 
         std::ofstream output (full_filename.c_str());
 
@@ -102,7 +94,7 @@ namespace aspect
 
         file_index++;
 
-        return output_file_prefix;
+        return "txt";
       }
 
       template <int dim>
@@ -128,6 +120,32 @@ namespace aspect
       {
         aspect::iarchive ia (is);
         ia >> (*this);
+      }
+
+      template <int dim>
+      const std::string
+      ASCIIOutput<dim>::get_file_name ()
+      {
+        return "particles-"
+               + get_file_index()
+               + "."
+               + Utilities::int_to_string(Utilities::MPI::this_mpi_process(this->get_mpi_communicator()), 4)
+               + ".txt";
+      }
+
+      template <int dim>
+      const std::string
+      ASCIIOutput<dim>::get_particle_output_location ()
+      {
+        return this->get_output_directory()
+               + "particles/";
+      }
+
+      template <int dim>
+      const std::string
+      ASCIIOutput<dim>::get_file_index ()
+      {
+        return Utilities::int_to_string(file_index, 5);
       }
     }
   }

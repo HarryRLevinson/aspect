@@ -104,6 +104,24 @@ namespace aspect
           void
           load (std::istringstream &is);
 
+          /**
+           * Returns a constructed filename.
+           */
+          const std::string
+          get_file_name();
+
+          /**
+           * Get the absolute path where the specified particle output will be generated.
+           */
+          const std::string
+          get_particle_output_location();
+
+          /**
+           * Get the current file index.
+           */
+          const std::string
+          get_file_index();
+
         private:
           /**
            * Internal index of file output number.

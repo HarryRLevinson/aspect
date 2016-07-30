@@ -63,6 +63,29 @@ namespace aspect
       Interface<dim>::load (std::istringstream &)
       {}
 
+      template <int dim>
+      const std::string
+      Interface<dim>::get_file_name()
+      {
+        // To prevent warning statement during compilation
+        return "";
+      }
+
+      template <int dim>
+      const std::string
+      Interface<dim>::get_particle_output_location()
+      {
+        // To prevent warning statement during compilation
+        return "";
+      }
+
+      template <int dim>
+      const std::string
+      Interface<dim>::get_file_index()
+      {
+        // To prevent warning statement during compilation
+        return "";
+      }
 
       // -------------------------------- Deal with registering models and automating
       // -------------------------------- their setup and selection at run time
