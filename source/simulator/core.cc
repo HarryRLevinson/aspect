@@ -1842,6 +1842,11 @@ namespace aspect
           current_linearization_point.block(introspection.block_indices.temperature)
             = solution.block(introspection.block_indices.temperature);
 
+          std::ofstream out;
+          out.open("compositional_fields_before_interpolation.dat");
+          solution.block(introspection.block_indices.compositional_fields[0]).print(out, 12);
+          out.close();
+
           for (unsigned int c=0; c < parameters.n_compositional_fields; ++c)
             {
               const AdvectionField adv_field (AdvectionField::composition(c));
@@ -1854,6 +1859,8 @@ namespace aspect
                     break;
 
                   case Parameters<dim>::AdvectionFieldMethod::particles:
+//                    assemble_advection_system (adv_field);
+//                        solve_advection(adv_field);
                     interpolate_particle_properties(adv_field);
                     break;
 
@@ -1861,6 +1868,10 @@ namespace aspect
                     AssertThrow(false,ExcNotImplemented());
                 }
             }
+
+          out.open("compositional_fields_after_interpolation.dat");
+          solution.block(introspection.block_indices.compositional_fields[0]).print(out, 12);
+          out.close();
 
           for (unsigned int c=0; c<parameters.n_compositional_fields; ++c)
             current_linearization_point.block(introspection.block_indices.compositional_fields[c])
@@ -1877,6 +1888,10 @@ namespace aspect
           assemble_stokes_system();
           build_stokes_preconditioner();
           solve_stokes();
+
+          out.open("compositional_fields_end_step.dat");
+          solution.block(introspection.block_indices.compositional_fields[0]).print(out, 12);
+          out.close();
 
           break;
         }
