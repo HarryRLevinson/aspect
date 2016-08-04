@@ -66,7 +66,7 @@ end
 
 subsection Discretization
   set Stokes velocity polynomial degree       = 2
-  set Use locally conservative discretization = false
+  set Use locally conservative discretization = true
 end
 
 
@@ -91,9 +91,9 @@ subsection Compositional initial conditions
   set Model name = function
   subsection Function
     set Variable names      = x,z
-    set Function constants  = pi=3.1415926, eta_b=1e6, ref_density=1.0
-    # set Function expression = ref_density - sin(pi*z) * cos(pi*x); if(x<0.5, 1, eta_b)
-    set Function expression = ref_density - sin(pi*z) * cos(pi*x)
+    set Function constants  = pi=3.1415926, eta_b=1e6, background_density=1.0
+    # set Function expression =  background_density - sin(pi*z) * cos(pi*x); if(x<0.5, 1, eta_b)
+    set Function expression =  background_density - sin(pi*z) * cos(pi*x)
   end
 end
 
@@ -115,23 +115,24 @@ subsection Postprocess
     set Time between data output = 0
     set Data output format = vtu
     set List of tracer properties = function
-    set Integration scheme = rk4
-    set Interpolation scheme = least square
-    set Maximum tracers per cell = 16384 #1048576 262144 65536 32768 16384
+    set Integration scheme = rk2
+    set Interpolation scheme = cell average
+    set Maximum tracers per cell = 16384
 
     subsection Function
       set Number of functions = 1
-      set Variable names      = x,z
+      set Variable names      = x,y
       set Function constants  = pi=3.1415926, eta_b=1e6, ref_density=1.0
-      set Function expression = ref_density - sin(pi*z) * cos(pi*x) #; if(x<0.5, 1, eta_b)
+#     set Function expression = ref_density - sin(pi*y) * cos(pi*x); if(x<0.5, 1, eta_b)
+      set Function expression = ref_density - sin(pi*y) * cos(pi*x)
     end
 
     set Particle generator name = uniform box
 
     subsection Generator
       subsection Probability density function
-        set Variable names      = x,z
-        set Function expression = x*x*z
+        set Variable names      = x,y
+        set Function expression = x*x*y
       end
 
       subsection Uniform box
