@@ -84,7 +84,7 @@ subsection Compositional fields
   set Names of fields = density_comp #, viscosity_comp
   set Compositional field methods = particles #, particles
   # set Mapped particle properties = density_comp:function1 #, viscosity_comp:function2
-  set Mapped particle properties = density_comp:function1
+  set Mapped particle properties = density_comp:function1 [0]
 end
 
 subsection Compositional initial conditions
