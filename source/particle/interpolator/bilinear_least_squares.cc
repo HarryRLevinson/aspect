@@ -69,14 +69,14 @@ namespace aspect
         const unsigned int n_particles = std::distance(particle_range.first,particle_range.second);
         const unsigned int n_properties = particles.begin()->second.get_properties().size();
 
-        std::vector<std::vector<double> > properties;
+        std::vector<std::vector<double> > properties(positions.size());
 
         AssertThrow(n_particles != 0,
                     ExcMessage("At least one cell contained no particles. The 'bilinear'"
                                "interpolation scheme does not support this case. "));
 
         const unsigned int matrix_dimension = 3;
-        dealii::FullMatrix<double> A(matrix_dimension,matrix_dimension);
+        dealii::FullMatrix<double> A(n_particles, matrix_dimension);
         A = 0;
 
         unsigned int index = 0;
@@ -84,12 +84,12 @@ namespace aspect
              particle != particle_range.second; ++particle, ++index)
           {
             const Point<dim> position = particle->second.get_location();
-            A(index,0) = position[0]
-                         A(index,1) = position[1]
-                                      A(index,2) = 1
+            A(index,0) = position[0];
+            A(index,1) = position[1];
+            A(index,2) = 1;
           }
 
-        dealii::FullMatrix<double> B(n_coefficients, n_coefficients);
+        dealii::FullMatrix<double> B(matrix_dimension, matrix_dimension);
         A.Tmmult(B, A, false);
         dealii::FullMatrix<double> B_inverse(B);
         B_inverse.gauss_jordan();
@@ -112,7 +112,6 @@ namespace aspect
                 r(1,0) += particle_property * position[1];
                 r(2,0) += particle_property;
 
-                const double particle_property = particle->second.get_properties()[i];
                 if (max_value_for_particle_property < particle_property)
                   max_value_for_particle_property = particle_property;
                 if (min_value_for_particle_property > particle_property)
@@ -123,7 +122,7 @@ namespace aspect
             c = 0;
             B_inverse.mmult(c, r);
 
-            index_positions = 0;
+            unsigned int index_positions = 0;
             for (typename std::vector<Point<dim> >::const_iterator itr = positions.begin(); itr != positions.end(); ++itr, ++index_positions)
               {
                 Point<dim> support_point = *itr;
@@ -133,7 +132,7 @@ namespace aspect
                 else if (interpolated_value < min_value_for_particle_property)
                   interpolated_value = min_value_for_particle_property;
 
-                properties[index_position].push_back(interpolated_value);
+                properties[index_positions].push_back(interpolated_value);
               }
           }
         return properties;

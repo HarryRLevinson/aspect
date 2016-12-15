@@ -80,20 +80,6 @@ namespace aspect
                     ExcMessage("At least one cell contained no particles. The 'constant "
                                "average' interpolation scheme does not support this case. "));
 
-
-        const QGauss<dim> quadrature_formula (this->introspection().polynomial_degree.compositional_fields+1);
-
-        FEValues<dim> fe_values(this->get_mapping(),
-                                this->get_fe(),
-                                quadrature_formula,
-                                update_values |
-                                update_quadrature_points |
-                                update_JxW_values);
-
-        fe_values.reinit(found_cell);
-
-        const std::vector<Point<dim> > quadrature_points = fe_values.get_quadrature_points();
-
         const unsigned int n_coefficients = 6;
         dealii::FullMatrix<double> A(n_particles,n_coefficients);
         A = 0;
@@ -118,9 +104,6 @@ namespace aspect
 
         for (unsigned int i = 0; i < n_properties; ++i)
           {
-            std::vector<double> properties_tmp(quadrature_formula.size());
-            properties_tmp.clear();
-
             dealii::FullMatrix<double> r(6,1);
             r = 0;
             for (typename std::multimap<types::LevelInd, Particle<dim> >::const_iterator particle = particle_range.first;
@@ -141,38 +124,12 @@ namespace aspect
             B_inverse.mmult(c, r);
 
             unsigned int index_positions = 0;
-            for (typename std::vector<Point<dim> >::const_iterator itr = quadrature_points.begin(); itr != quadrature_points.end(); ++itr, ++index_positions)
-              {
-                Point<dim> quadrature_point = *itr;
-                double interpolated_value = c(0,0) + c(1,0)*(quadrature_point[0]) + c(2,0)*(quadrature_point[1]) + c(3,0)*(quadrature_point[0] * quadrature_point[1]) +  c(4,0)*(quadrature_point[0] * quadrature_point[0]) + c(5,0)*(quadrature_point[1] * quadrature_point[1]);
-                properties_tmp.push_back(interpolated_value);
-              }
-
-            double local_cell_average = 0;
-            double local_cell_area = 0;
-            for (unsigned int q = 0; q < fe_values.n_quadrature_points; ++q)
-              {
-                local_cell_area += fe_values.JxW(q);
-                local_cell_average += properties_tmp[q] * fe_values.JxW(q);
-              }
-            local_cell_average /= local_cell_area;
-
-            double offset = 0;
-            if (local_cell_average < global_min[i])
-              offset = global_min[i] - local_cell_average;
-            else if (local_cell_average > global_max[i])
-              offset = global_max[i] - local_cell_average;
-            else
-              offset = 0;
-
-            index_positions = 0;
             for (typename std::vector<Point<dim> >::const_iterator itr = positions.begin(); itr != positions.end(); ++itr, ++index_positions)
               {
                 Point<dim> support_point = *itr;
-                double interpolated_value = c(0,0) + c(1,0)*(support_point[0]) + c(2,0)*(support_point[1]) + c(3,0)*(support_point[0] * support_point[1]) +  c(4,0)*(support_point[0] * support_point[0]) + c(5,0)*(support_point[1] * support_point[1]) + offset;
+                double interpolated_value = c(0,0) + c(1,0)*(support_point[0]) + c(2,0)*(support_point[1]) + c(3,0)*(support_point[0] * support_point[1]) +  c(4,0)*(support_point[0] * support_point[0]) + c(5,0)*(support_point[1] * support_point[1]);
                 properties[index_positions].push_back(interpolated_value);
               }
-            properties_tmp.clear();
           }
         return properties;
       }
