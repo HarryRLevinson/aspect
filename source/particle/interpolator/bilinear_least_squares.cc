@@ -19,8 +19,14 @@
  */
 
 #include <aspect/particle/interpolator/bilinear_least_squares.h>
-
+#include <aspect/simulator.h>
 #include <deal.II/grid/grid_tools.h>
+
+#include <deal.II/fe/fe_values.h>
+#include <deal.II/grid/grid_tools.h>
+
+#include <boost/lexical_cast.hpp>
+
 
 namespace aspect
 {
@@ -74,7 +80,23 @@ namespace aspect
         AssertThrow(n_particles != 0,
                     ExcMessage("At least one cell contained no particles. The 'bilinear'"
                                "interpolation scheme does not support this case. "));
+         
+				const unsigned int n_coefficients = 3;
+				 
+				 const QGauss<dim> quadrature_formula (this->introspection().polynomial_degree.compositional_fields+1);
 
+        FEValues<dim> fe_values(this->get_mapping(),
+                                this->get_fe(),
+                                quadrature_formula,
+                                update_values |
+                                update_quadrature_points |
+                                update_JxW_values);
+
+        fe_values.reinit(found_cell); 
+				const std::vector<Point<dim> > quadrature_points = fe_values.get_quadrature_points();
+				 
+				 
+				 
         const unsigned int matrix_dimension = 3;
         dealii::FullMatrix<double> A(n_particles, matrix_dimension);
         A = 0;
@@ -96,9 +118,14 @@ namespace aspect
 
         for (unsigned int i = 0; i < n_properties; ++i)
           {
+						
+						  std::vector<double> properties_tmp(quadrature_formula.size());
+            properties_tmp.clear();
+						
             dealii::FullMatrix<double> r(3,1);
             r = 0;
-
+						
+						
             double max_value_for_particle_property = (particle_range.first)->second.get_properties()[i];
             double min_value_for_particle_property = (particle_range.first)->second.get_properties()[i];
 
@@ -111,11 +138,6 @@ namespace aspect
                 r(0,0) += particle_property * position[0];
                 r(1,0) += particle_property * position[1];
                 r(2,0) += particle_property;
-
-                if (max_value_for_particle_property < particle_property)
-                  max_value_for_particle_property = particle_property;
-                if (min_value_for_particle_property > particle_property)
-                  min_value_for_particle_property = particle_property;
               }
 
             dealii::FullMatrix<double> c(matrix_dimension,1);
@@ -127,16 +149,108 @@ namespace aspect
               {
                 Point<dim> support_point = *itr;
                 double interpolated_value = c(2,0) + c(0,0)*(support_point[0]) + c(1,0)*(support_point[1]);
-                if (interpolated_value > max_value_for_particle_property)
-                  interpolated_value = max_value_for_particle_property;
-                else if (interpolated_value < min_value_for_particle_property)
-                  interpolated_value = min_value_for_particle_property;
+                 properties_tmp.push_back(interpolated_value);
 
+  
+              }
+							
+							double local_cell_average = 0;
+            double local_cell_area = 0;
+            for (unsigned int q = 0; q < fe_values.n_quadrature_points; ++q)
+              {
+                local_cell_area += fe_values.JxW(q);
+                local_cell_average += properties_tmp[q] * fe_values.JxW(q);
+              }
+            local_cell_average /= local_cell_area;
+						
+						double offset = 0;
+            if (local_cell_average < global_min[i])
+              offset = global_min[i] - local_cell_average;
+            else if (local_cell_average > global_max[i])
+              offset = global_max[i] - local_cell_average;
+            else
+              offset = 0;
+							
+						 index_positions = 0;
+              for (typename std::vector<Point<dim> >::const_iterator itr = positions.begin(); itr != positions.end(); ++itr, ++index_positions)
+              {
+                Point<dim> support_point = *itr;
+								double interpolated_value = c(2,0) + c(0,0)*(support_point[0]) + c(1,0)*(support_point[1]) + offset;
                 properties[index_positions].push_back(interpolated_value);
               }
+						
+							 properties_tmp.clear();
           }
         return properties;
       }
+
+
+
+      template <int dim>
+      void
+      BilinearLeastSquares<dim>::declare_parameters (ParameterHandler &prm)
+      {
+        prm.enter_subsection("Postprocess");
+        {
+          prm.enter_subsection("Tracers");
+          {
+            prm.enter_subsection("Interpolator");
+            {
+              prm.enter_subsection("Bilinear");
+              {
+                prm.declare_entry ("Global maximum",
+                                   boost::lexical_cast<std::string>(std::numeric_limits<double>::max()),
+                                   Patterns::List(Patterns::Double ()),
+                                   "The maximum global property values that will be used in the bound preserving "
+                                   "limiter for the discontinuous solutions during interpolation. "
+                                   "The number of the input 'Global maximum' values seperated by ',' has to be "
+                                   "the same as the number of particle properties");
+                prm.declare_entry ("Global minimum",
+                                   boost::lexical_cast<std::string>(-std::numeric_limits<double>::max()),
+                                   Patterns::List(Patterns::Double ()),
+                                   "The minimum global property values that will be used in the bound preserving "
+                                   "limiter for the discontinuous solutions during interpolation. "
+                                   "The number of the input 'Global minimum' values seperated by ',' has to be "
+                                   "the same as the number of the particle properties");
+              }
+              prm.leave_subsection ();
+            }
+            prm.leave_subsection ();
+          }
+          prm.leave_subsection ();
+        }
+        prm.leave_subsection ();
+      }
+
+		  template <int dim>
+      void
+      BilinearLeastSquares<dim>::parse_parameters (ParameterHandler &prm)
+      {
+        prm.enter_subsection("Postprocess");
+        {
+          prm.enter_subsection("Tracers");
+          {
+            prm.enter_subsection("Interpolator");
+            {
+              prm.enter_subsection("Bilinear");
+              {
+                global_max = Utilities::string_to_double
+                             (Utilities::split_string_list(prm.get ("Global maximum")));
+                global_min = Utilities::string_to_double
+                             (Utilities::split_string_list(prm.get ("Global minimum")));
+              }
+              prm.leave_subsection ();
+            }
+            prm.leave_subsection ();
+          }
+          prm.leave_subsection ();
+        }
+        prm.leave_subsection ();
+      }
+			
+			
+
+			
     }
   }
 }
