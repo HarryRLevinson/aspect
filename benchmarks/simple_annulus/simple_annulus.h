@@ -43,7 +43,8 @@ namespace aspect
       template <int dim>
       void analytic_solution(
         double pos[],
-        double vel[], double *pressure, std_cxx11::shared_ptr<Functions::ParsedFunction<dim> > pressure_function)
+        double vel[], double *pressure, double *density, std_cxx11::shared_ptr<Functions::ParsedFunction<dim> > density_function, 
+	std_cxx11::shared_ptr<Functions::ParsedFunction<dim> > pressure_function)
       {
         /****************************************************************************************/
         /****************************************************************************************/
@@ -53,7 +54,8 @@ namespace aspect
 
         //(*pressure) = 0;
         (*pressure) = pressure_function->value(Point<dim>(pos[0], pos[1]));
-      }
+        (*density) = density_function->value(Point<dim>(pos[0], pos[1]));
+     }
 
       /**
        * The exact solution for the benchmark, given
@@ -63,10 +65,11 @@ namespace aspect
       class FunctionStreamline : public Function<dim>
       {
         public:
-          FunctionStreamline (std_cxx11::shared_ptr<Functions::ParsedFunction<dim>> pressure)
+          FunctionStreamline (std_cxx11::shared_ptr<Functions::ParsedFunction<dim>> density, std_cxx11::shared_ptr<Functions::ParsedFunction<dim>> pressure)
             :
             Function<dim>(),
-            pressure_function (pressure)
+            pressure_function (pressure),
+            density_function(density)
           {}
 
           virtual void vector_value (const Point< dim > &p,
@@ -76,10 +79,11 @@ namespace aspect
 
             AnalyticSolutions::analytic_solution<dim>
             (pos,
-             &values[0], &values[2], pressure_function);
+             &values[0], &values[2], &values[3], density_function, pressure_function);
           }
         private:
           std_cxx11::shared_ptr<Functions::ParsedFunction<dim> > pressure_function;
+          std_cxx11::shared_ptr<Functions::ParsedFunction<dim> > density_function;
       };
     }
 
@@ -261,6 +265,14 @@ namespace aspect
           return pressure_function;
         }
 
+
+        std_cxx11::shared_ptr<Functions::ParsedFunction<dim>>  get_density() const
+        {
+          return density_function;
+        }
+
+
+
         double get_background_density() const
         {
           return background_density;
@@ -309,7 +321,8 @@ namespace aspect
                 = dynamic_cast<const SimpleAnnulusMaterialModel<dim> *>(&this->get_material_model());
 
               material_model->get_pressure();
-              ref_func.reset (new AnalyticSolutions::FunctionStreamline<dim>(material_model->get_pressure()));
+              //std::cout << "HI: " << material_model->get_density()->value(Point<dim>(2, 0));
+              ref_func.reset (new AnalyticSolutions::FunctionStreamline<dim>(material_model->get_density(), material_model->get_pressure()));
             }
           else
             {
@@ -323,10 +336,18 @@ namespace aspect
           Vector<float> cellwise_errors_p (this->get_triangulation().n_active_cells());
           Vector<float> cellwise_errors_ul2 (this->get_triangulation().n_active_cells());
           Vector<float> cellwise_errors_pl2 (this->get_triangulation().n_active_cells());
+          Vector<float> cellwise_errors_ulinfty (this->get_triangulation().n_active_cells());
+          Vector<float> cellwise_errors_plinfty (this->get_triangulation().n_active_cells());          
+          Vector<float> cellwise_errors_density (this->get_triangulation().n_active_cells());
+
+
 
           ComponentSelectFunction<dim> comp_u(std::pair<unsigned int, unsigned int>(0,dim),
                                               this->get_fe().n_components());
           ComponentSelectFunction<dim> comp_p(dim, this->get_fe().n_components());
+
+          ComponentSelectFunction<dim> comp_density(dim + 1, this->get_fe().n_components());
+
 
           VectorTools::integrate_difference (this->get_mapping(),this->get_dof_handler(),
                                              this->get_solution(),
@@ -357,18 +378,56 @@ namespace aspect
                                              VectorTools::L2_norm,
                                              &comp_p);
 
+
+          VectorTools::integrate_difference (this->get_mapping(),this->get_dof_handler(),
+                                             this->get_solution(),
+                                             *ref_func,
+                                             cellwise_errors_density,
+                                             quadrature_formula,
+                                             VectorTools::L2_norm,
+                                             &comp_density);
+
+
+
+       	VectorTools::integrate_difference (this->get_mapping(),this->get_dof_handler(),
+                                             this->get_solution(),
+                                             *ref_func,
+                                             cellwise_errors_ulinfty,
+                                             quadrature_formula,
+                                             VectorTools::Linfty_norm,
+                                             &comp_u);
+          VectorTools::integrate_difference (this->get_mapping(),this->get_dof_handler(),
+                                             this->get_solution(),
+                                             *ref_func,
+                                             cellwise_errors_plinfty,
+                                             quadrature_formula,
+                                             VectorTools::Linfty_norm,
+                                             &comp_p);
+
+
+          std::cout << "Test Density: " << cellwise_errors_density;
+
+
           const double u_l1 = Utilities::MPI::sum(cellwise_errors_u.l1_norm(),this->get_mpi_communicator());
           const double p_l1 = Utilities::MPI::sum(cellwise_errors_p.l1_norm(),this->get_mpi_communicator());
           const double u_l2 = std::sqrt(Utilities::MPI::sum(cellwise_errors_ul2.norm_sqr(),this->get_mpi_communicator()));
           const double p_l2 = std::sqrt(Utilities::MPI::sum(cellwise_errors_pl2.norm_sqr(),this->get_mpi_communicator()));
+          const double u_linfty = std::sqrt(Utilities::MPI::sum(cellwise_errors_ulinfty.linfty_norm(),this->get_mpi_communicator()));
+          const double p_linfty = std::sqrt(Utilities::MPI::sum(cellwise_errors_plinfty.linfty_norm(),this->get_mpi_communicator()));
+          const double density = std::sqrt(Utilities::MPI::sum(cellwise_errors_density.norm_sqr(),this->get_mpi_communicator()));
+
+
 
           std::ostringstream os;
           os << std::scientific << u_l1
              << ", " << p_l1
              << ", " << u_l2
-             << ", " << p_l2;
+             << ", " << p_l2
+             << ", " << u_linfty
+             << ", " << p_linfty
+             << ", " << density;
 
-          return std::make_pair("Errors u_L1, p_L1, u_L2, p_L2:", os.str());
+          return std::make_pair("Errors u_L1, p_L1, u_L2, p_L2, u_Linfty, p_Linfty, density_L2:", os.str());
         }
     };
   }
