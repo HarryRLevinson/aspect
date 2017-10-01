@@ -74,7 +74,7 @@ namespace aspect
            * and global min for each propery.
            */
           bool use_global_valued_limiter;
-
+          bool check_for_overshoot_and_undershoot;
           /**
            * For each interpolated particle property, a global max and global
            * min are stored as elements of vectors.
