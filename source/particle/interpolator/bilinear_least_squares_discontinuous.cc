@@ -37,9 +37,9 @@ namespace aspect
       template <int dim>
       std::vector<std::vector<double> >
       BilinearLeastSquaresDiscontinuous<dim>::properties_at_points(const std::multimap<types::LevelInd, Particle<dim> > &particles,
-                                                      const std::vector<Point<dim> > &positions,
-                                                      const ComponentMask &selected_properties,
-                                                      const typename parallel::distributed::Triangulation<dim>::active_cell_iterator &cell) const
+                                                                   const std::vector<Point<dim> > &positions,
+                                                                   const ComponentMask &selected_properties,
+                                                                   const typename parallel::distributed::Triangulation<dim>::active_cell_iterator &cell) const
       {
         const unsigned int n_particle_properties = particles.begin()->second.get_properties().size();
 
@@ -142,7 +142,7 @@ namespace aspect
             double interpolated_value = c[0] +
                                         c[1]*(support_point[0] - approximated_cell_midpoint[0])/cell_diameter +
                                         c[2]*(support_point[1] - approximated_cell_midpoint[1])/cell_diameter; //+
-                                       // c[3]*(support_point[0] - approximated_cell_midpoint[0])*(support_point[1] - approximated_cell_midpoint[1])/std::pow(cell_diameter,2);
+            // c[3]*(support_point[0] - approximated_cell_midpoint[0])*(support_point[1] - approximated_cell_midpoint[1])/std::pow(cell_diameter,2);
 
             // Overshoot and undershoot correction of interpolated particle property.
             if (use_global_valued_limiter)
@@ -166,7 +166,7 @@ namespace aspect
           {
             prm.enter_subsection("Interpolator");
             {
-              prm.enter_subsection("Bilinear least squaresi discontinuous");
+              prm.enter_subsection("Bilinear least squares discontinuous");
               {
                 prm.declare_entry ("Global particle property maximum",
                                    boost::lexical_cast<std::string>(std::numeric_limits<double>::max()),
