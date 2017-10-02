@@ -142,7 +142,17 @@ namespace aspect
                                         c[1]*(support_point[0] - approximated_cell_midpoint[0])/cell_diameter +
                                         c[2]*(support_point[1] - approximated_cell_midpoint[1])/cell_diameter +
                                         c[3]*(support_point[0] - approximated_cell_midpoint[0])*(support_point[1] - approximated_cell_midpoint[1])/std::pow(cell_diameter,2);
+                
 
+            // Trigger an assert statement if there is overshoot or undershoot.
+            if (check_for_overshoot_and_undershoot)
+            {
+                AssertThrow(interpolated_value >= global_minimum_particle_properties[property_index] &&
+                            interpolated_value <= global_maximum_particle_properties[property_index],
+                            ExcMessage("Overshoot or undershoot detected"));
+            }
+            
+ 
             // Overshoot and undershoot correction of interpolated particle property.
             if (use_global_valued_limiter)
               {
@@ -185,7 +195,10 @@ namespace aspect
                                   Patterns::Bool (),
                                   "Whether to apply a global particle property limiting scheme to the interpolated "
                                   "particle properties.");
-
+               
+                prm.declare_entry("Check for overshoot and undershoot", "false",
+                                  Patterns::Bool (),
+                                  "Whether to trigger an assert statement if there is overshoot or undershoot.");
               }
               prm.leave_subsection();
             }
@@ -209,7 +222,9 @@ namespace aspect
               prm.enter_subsection("Bilinear least squares");
               {
                 use_global_valued_limiter = prm.get_bool("Use limiter");
-                if (use_global_valued_limiter)
+                check_for_overshoot_and_undershoot = prm.get_bool("Check for overshoot and undershoot");
+
+                if (use_global_valued_limiter || check_for_overshoot_and_undershoot)
                   {
                     global_maximum_particle_properties = Utilities::string_to_double(Utilities::split_string_list(prm.get("Global particle property maximum")));
                     global_minimum_particle_properties = Utilities::string_to_double(Utilities::split_string_list(prm.get("Global particle property minimum")));
